@@ -1,0 +1,30 @@
+# Normalisation par défaut : tous les fichiers texte sont convertis en LF dans le repo
+* text=auto eol=lf
+
+# Fichiers de configuration et code → toujours LF
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.md   text eol=lf
+
+# Scripts shell (Linux/Mac) → LF
+*.sh   text eol=lf
+
+# Scripts Windows → CRLF
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Binary files → jamais convertis
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.exe  binary
+*.dll  binary
