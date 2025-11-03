@@ -1,4 +1,3 @@
-// app/ArticleDetail.tsx
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -44,10 +43,9 @@ export default function ArticleDetail() {
           return;
         }
 
-        // Recherche progressive dans Supabase
         let { data, error } = await supabase
           .from("articles")
-          .select("reference, designation, prix, stock, categorie")
+          .select("reference, designation, categorie")
           .eq("reference", reference)
           .maybeSingle();
 
@@ -56,7 +54,7 @@ export default function ArticleDetail() {
         if (!data) {
           const res2 = await supabase
             .from("articles")
-            .select("reference, designation, prix, stock, categorie")
+            .select("reference, designation, categorie")
             .ilike("reference", reference)
             .maybeSingle();
           if (res2.error) console.log("⚠️ Erreur supabase ilike:", res2.error.message || res2.error);
@@ -66,7 +64,7 @@ export default function ArticleDetail() {
         if (!data) {
           const res3 = await supabase
             .from("articles")
-            .select("reference, designation, prix, stock, categorie")
+            .select("reference, designation, categorie")
             .ilike("reference", `%${reference}%`)
             .limit(1);
           if (res3.error) console.log("⚠️ Erreur supabase ilike %:", res3.error.message || res3.error);
@@ -97,9 +95,7 @@ export default function ArticleDetail() {
 
   const increase = () => {
     const current = qtyNumber();
-    if (article && current < (article.stock ?? 0)) {
-      setQuantity(String(current + 1));
-    }
+    setQuantity(String(current + 1));
   };
 
   const decrease = () => {
@@ -117,18 +113,13 @@ export default function ArticleDetail() {
       Alert.alert("Quantité invalide");
       return;
     }
-    if (q > (article.stock ?? 0)) {
-      Alert.alert("Stock insuffisant", `Stock disponible : ${article.stock}`);
-      return;
-    }
 
     addToCart({
       id: article.reference,
       code: article.reference,
       designation: article.designation,
       quantite: q,
-      prix: article.prix ?? 0,
-      stock: article.stock ?? 0,
+      prix: 0,
     });
 
     Alert.alert("Ajouté ✅", "Article ajouté au panier");
@@ -161,8 +152,7 @@ export default function ArticleDetail() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{article.designation}</Text>
       <Text style={styles.sub}>Référence : {article.reference}</Text>
-      <Text style={styles.sub}>Prix : {article.prix ?? "-"} €</Text>
-      <Text style={styles.sub}>Stock : {article.stock ?? "-"}</Text>
+      <Text style={styles.sub}>Quantité :</Text>
 
       <View style={styles.qtyRow}>
         <TouchableOpacity onPress={decrease} style={styles.qtyBtn}>
@@ -183,7 +173,7 @@ export default function ArticleDetail() {
         <Text style={styles.addTxt}>Ajouter au panier</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.btn, { backgroundColor: "#999" }]} onPress={() => router.back()}>
+      <TouchableOpacity style={[styles.btn, { backgroundColor: "#999" }]} onPress={() => router.replace("/(tabs)")}>
         <Text style={styles.btnText}>Annuler</Text>
       </TouchableOpacity>
     </ScrollView>

@@ -1,8 +1,17 @@
+// app/back/_layout.tsx
+import { Tabs, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
 import { Image } from "react-native";
+import { useAuth } from "../../context/AuthContext";
 
-export default function TabLayout() {
+export default function BackLayout() {
+  const { isLoggedIn, isAdmin } = useAuth();
+
+  // 🔐 Sécurité : si non admin, on renvoie à l’accueil
+  if (!isLoggedIn || !isAdmin) {
+    return <Redirect href="/(tabs)" />;
+  }
+
   return (
     <Tabs
       screenOptions={{
@@ -35,7 +44,7 @@ export default function TabLayout() {
           shadowOpacity: 0.05,
           shadowRadius: 4,
           elevation: 4,
-          height: 120,
+          height: 110,
         },
         headerTitleAlign: "center",
       }}
@@ -43,35 +52,27 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Accueil",
+          title: "Commandes",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" color={color} size={size} />
+            <Ionicons name="list-outline" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-          name="panier"
-          options={{
-            title: "Panier",
-            headerShown: true,
-            headerTitleAlign: "center",
-            headerTitle: () => (
-              <Image
-                source={require("../../assets/images/etn.png")}
-                style={{ width: 120, height: 100, resizeMode: "contain" }}
-              />
-            ),
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="cart-outline" color={color} size={size} />
-            ),
-          }}
-        />
-      <Tabs.Screen
-        name="profile"
+        name="stats"
         options={{
-          title: "Profil",
+          title: "Statistiques",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" color={color} size={size} />
+            <Ionicons name="bar-chart-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="users"
+        options={{
+          title: "Utilisateurs",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-outline" color={color} size={size} />
           ),
         }}
       />

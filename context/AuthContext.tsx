@@ -8,6 +8,8 @@ type ClientData = {
   code_postal: string;
   ville: string;
   commercial: string;
+  role?: "client" | "admin";
+  last_login?: string | null;
 };
 
 type AuthContextType = {
@@ -17,9 +19,11 @@ type AuthContextType = {
   loginWithQr: (data: string) => Promise<boolean>;
   logout: () => void;
   setClient: React.Dispatch<React.SetStateAction<ClientData | null>>;
+  isAdmin: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
 
 /* ---------- Helpers ---------- */
 
@@ -65,14 +69,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // 🔎 Vérifier dans Supabase
     const { data, error: dbError } = await supabase
-      .from("clients") // ⚡ ta table dans Supabase
+      .from("clients")
       .select("*")
-      .eq("code_client", normalizedCode) // la colonne dans Supabase
+      .eq("code_client", normalizedCode) 
       .single();
 
     if (dbError || !data) {
       setError(`Code client ${normalizedCode} non reconnu ❌`);
       return false;
+    }
+
+    const { error: updateError } = await supabase
+      .from("clients")
+      .update({ last_login: new Date().toISOString() })
+      .eq("code_client", normalizedCode);
+
+    if (updateError) {
+      console.error("Erreur mise à jour last_login:", updateError.message);
     }
 
     // ✅ Connexion réussie
@@ -83,6 +96,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       code_postal: data.code_postal,
       ville: data.ville,
       commercial: data.commercial,
+      role: data.role ?? "client",
+      last_login: new Date().toISOString(),
     });
     setIsLoggedIn(true);
     return true;
@@ -94,8 +109,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
   };
 
+  const isAdmin = client?.role === "admin";
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn, client, error, loginWithQr, logout, setClient }}>
+    <AuthContext.Provider value={{ isLoggedIn, client, error, loginWithQr, logout, setClient, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

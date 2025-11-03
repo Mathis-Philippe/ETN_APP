@@ -16,7 +16,7 @@ export default function SuccessScreen() {
       {/* Texte */}
       <Text style={styles.title}>Commande confirmée.</Text>
       <Text style={styles.subtitle}>
-        Merci pour votre achat ! Votre commande est en cours de préparation.
+        Merci pour votre commande ! Nos équipes s&apos;occupent de la préparer !
       </Text>
 
       {/* Bouton retour */}
@@ -24,7 +24,7 @@ export default function SuccessScreen() {
         style={styles.button}
         onPress={() => router.push("/")}
       >
-        <Text style={styles.buttonText}>Retour à l’accueil</Text>
+        <Text style={styles.buttonText}>Retour à l&apos;accueil</Text>
       </TouchableOpacity>
     </View>
   );

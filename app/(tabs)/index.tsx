@@ -6,6 +6,7 @@ import Svg, { Path, Rect } from "react-native-svg";
 import { useAuth } from "../../context/AuthContext";
 import { parseQrData } from "../../lib/qrParser";
 import Toast from "react-native-toast-message";
+import { StatusBar } from "expo-status-bar";
 
 export default function HomeScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -60,6 +61,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="dark" />
       {!scanning ? (
         <>
           <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 20, textAlign: "center" }}>

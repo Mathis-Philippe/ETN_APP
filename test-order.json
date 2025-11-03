@@ -1,0 +1,11 @@
+{
+  "firstName": "Jean",
+  "lastName": "Dupont",
+  "orderNumber": "1234",
+  "comment": "Test automatique",
+  "cart": [
+    {"designation": "Pompe X200", "code": "PX200", "quantite": 2},
+    {"designation": "Filtre Y100", "code": "FY100", "quantite": 1}
+  ],
+  "email": "mathis.philippe2005@gmail.com"
+}

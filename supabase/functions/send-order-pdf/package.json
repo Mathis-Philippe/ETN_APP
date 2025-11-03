@@ -1,0 +1,8 @@
+{
+  "name": "send-order-pdf",
+  "version": "1.0.0",
+  "dependencies": {
+    "resend": "^1.0.0",
+    "pdfkit": "^0.13.0"
+  }
+}

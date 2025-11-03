@@ -64,7 +64,7 @@ export default function CheckoutScreen() {
               router.push("/success"); // écran de confirmation à créer
             }}
           >
-            <Text style={styles.payText}>Procéder au paiement</Text>
+            <Text style={styles.payText}>Envoyer la commande</Text>
           </TouchableOpacity>
         </View>
       )}

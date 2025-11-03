@@ -1,35 +1,59 @@
 // app/_layout.tsx
-import React from "react";
-import { Stack, Redirect } from "expo-router";
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { Stack, useRouter } from "expo-router";
 import { AuthProvider, useAuth } from "../context/AuthContext";
-import { CartProvider } from "../context/CartContext"; 
+import { CartProvider } from "../context/CartContext";
 import Toast from "react-native-toast-message";
 
+
+// Composant client pour gérer les redirections après le montage
 function RootNavigator() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isAdmin } = useAuth();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
-  // redirige en fonction de l'état d'auth
-  if (!isLoggedIn) {
-    return <Redirect href="/(auth)/login" />;
-  }
+  // On attend que le layout soit monté
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return <Redirect href="/(tabs)" />;
+  useEffect(() => {
+    if (!mounted) return;
+
+    if (!isLoggedIn) {
+      router.replace("/(auth)/login");
+      return;
+    }
+
+    if (isAdmin) {
+      router.replace("/(back)");
+      return;
+    }
+
+    router.replace("/(tabs)");
+  }, [isLoggedIn, isAdmin, router, mounted]);
+
+  return null; // Ce composant ne rend rien
 }
 
 export default function RootLayout() {
   return (
     <AuthProvider>
       <CartProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
+        {/* Stack principal de l'application */}
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(back)" />
+        </Stack>
 
-      {/* RootNavigator doit être en-dehors du <Stack> */}
-      <RootNavigator />
+        {/* Gestion des redirections */}
+        <RootNavigator />
 
-      {/* Toast global pour messages non bloquants */}
-      <Toast />
+        {/* Toast global */}
+        <Toast />
       </CartProvider>
     </AuthProvider>
   );
