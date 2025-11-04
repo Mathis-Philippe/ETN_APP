@@ -141,7 +141,7 @@ try {
   if (cart.length === 0) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.empty}>Votre panier est vide 🛒</Text>
+        <Text style={styles.empty}>Votre panier est vide</Text>
       </View>
     );
   }

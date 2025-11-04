@@ -44,7 +44,7 @@ export default function BackLayout() {
           shadowOpacity: 0.05,
           shadowRadius: 4,
           elevation: 4,
-          height: 110,
+          height: 120,
         },
         headerTitleAlign: "center",
       }}

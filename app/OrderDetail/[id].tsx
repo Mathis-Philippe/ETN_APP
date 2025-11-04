@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import supabase from "../../lib/supabase";
 import { MaterialIcons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
+import { LinearGradient } from 'expo-linear-gradient';
 
 type OrderItem = {
   code: string;
@@ -65,18 +66,18 @@ export default function OrderDetailScreen() {
 
   if (loading) {
     return (
-      <ActivityIndicator
-        size="large"
-        color="#4A90E2"
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-      />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4A90E2" />
+        <Text style={styles.loadingText}>Chargement...</Text>
+      </View>
     );
   }
 
   if (!order) {
     return (
       <View style={styles.centered}>
-        <Text>Aucune commande trouvée.</Text>
+        <MaterialIcons name="inbox" size={64} color="#CBD5E1" />
+        <Text style={styles.emptyText}>Aucune commande trouvée</Text>
       </View>
     );
   }
@@ -84,86 +85,166 @@ export default function OrderDetailScreen() {
   const pdfUrl = `https://cardiovascular-pitchier-duke.ngrok-free.dev/order-pdf/${order.order_number}`;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8FAFC" }}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 50 }}
+    <View style={styles.mainContainer}>
+      {/* Header avec gradient */}
+      <LinearGradient
+        colors={['#4A90E2', '#357ABD']}
+        style={styles.headerGradient}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <MaterialIcons name="arrow-back" size={28} color="#1E293B" />
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.title}>Commande #{order.order_number}</Text>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerSubtitle}>Commande</Text>
+            <Text style={styles.headerTitle}>#{order.order_number}</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Card Client */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={styles.iconCircle}>
+              <MaterialIcons name="person" size={20} color="#4A90E2" />
+            </View>
+            <Text style={styles.cardTitle}>Informations client</Text>
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.clientName}>
+              {order.first_name} {order.last_name}
+            </Text>
+          </View>
         </View>
 
-        {/* Client */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Client</Text>
-          <Text>
-            {order.first_name} {order.last_name}
-          </Text>
+        {/* Card Date */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={styles.iconCircle}>
+              <MaterialIcons name="event" size={20} color="#4A90E2" />
+            </View>
+            <Text style={styles.cardTitle}>Date de commande</Text>
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.dateText}>
+              {new Date(order.created_at).toLocaleDateString("fr-FR", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </Text>
+            <Text style={styles.timeText}>
+              {new Date(order.created_at).toLocaleTimeString("fr-FR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          </View>
         </View>
 
-        {/* Date & Heure */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Date & Heure</Text>
-          <Text>{new Date(order.created_at).toLocaleString("fr-FR")}</Text>
-        </View>
-
-        {/* Commentaire */}
+        {/* Card Commentaire */}
         {order.comment && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Commentaire</Text>
-            <Text>{order.comment}</Text>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.iconCircle}>
+                <MaterialIcons name="comment" size={20} color="#4A90E2" />
+              </View>
+              <Text style={styles.cardTitle}>Commentaire</Text>
+            </View>
+            <View style={styles.cardContent}>
+              <Text style={styles.commentText}>{order.comment}</Text>
+            </View>
           </View>
         )}
 
-        {/* Articles */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Articles ({order.items.total_items})
-          </Text>
-          {order.items.products.map((item, index) => (
-            <View key={index} style={styles.itemRow}>
-              <Text>{item.designation}</Text>
-              <Text>Qté: {item.quantity}</Text>
+        {/* Card Articles */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={styles.iconCircle}>
+              <MaterialIcons name="shopping-cart" size={20} color="#4A90E2" />
             </View>
-          ))}
+            <Text style={styles.cardTitle}>Articles</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{order.items.total_items}</Text>
+            </View>
+          </View>
+          <View style={styles.cardContent}>
+            {order.items.products.map((item, index) => (
+              <View 
+                key={index} 
+                style={[
+                  styles.itemRow,
+                  index !== order.items.products.length - 1 && styles.itemRowBorder
+                ]}
+              >
+                <View style={styles.itemLeft}>
+                  <View style={styles.itemDot} />
+                  <Text style={styles.itemName} numberOfLines={2}>
+                    {item.designation}
+                  </Text>
+                </View>
+                <View style={styles.quantityBadge}>
+                  <Text style={styles.quantityText}>×{item.quantity}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* Bouton PDF */}
         <TouchableOpacity
           style={styles.pdfButton}
           onPress={() => setPdfVisible(true)}
+          activeOpacity={0.8}
         >
-          <Text style={styles.pdfText}>Voir le bon de commande (PDF)</Text>
+          <LinearGradient
+            colors={['#4A90E2', '#357ABD']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.pdfButtonGradient}
+          >
+            <MaterialIcons name="picture-as-pdf" size={24} color="#fff" />
+            <Text style={styles.pdfText}>Voir le bon de commande</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Modal avec WebView */}
+      {/* Modal PDF */}
       <Modal visible={pdfVisible} animationType="slide">
         <View style={{ flex: 1 }}>
-          <View style={styles.pdfHeader}>
+          <LinearGradient
+            colors={['#4A90E2', '#357ABD']}
+            style={styles.pdfHeader}
+          >
             <TouchableOpacity
               onPress={() => setPdfVisible(false)}
-              style={{ marginLeft: 10 }}
+              style={styles.closeButton}
+              activeOpacity={0.7}
             >
               <MaterialIcons name="close" size={28} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.pdfHeaderTitle}>Bon de commande</Text>
-          </View>
+          </LinearGradient>
           <WebView
             source={{ uri: pdfUrl }}
             originWhitelist={["*"]}
             style={{ flex: 1 }}
             startInLoadingState
             renderLoading={() => (
-              <ActivityIndicator
-                size="large"
-                color="#4A90E2"
-                style={{ flex: 1 }}
-              />
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#4A90E2" />
+                <Text style={styles.loadingText}>Chargement du PDF...</Text>
+              </View>
             )}
           />
         </View>
@@ -173,37 +254,237 @@ export default function OrderDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 80 },
-  header: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-  backButton: { marginRight: 12 },
-  title: { fontSize: 22, fontWeight: "700", color: "#1E293B" },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 6 },
+  mainContainer: {
+    flex: 1,
+    backgroundColor: "#F1F5F9",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F1F5F9",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#64748B",
+    fontWeight: "500",
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F1F5F9",
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 18,
+    color: "#64748B",
+    fontWeight: "500",
+  },
+  headerGradient: {
+    paddingTop: 60,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTextContainer: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.9)",
+    fontWeight: "500",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#fff",
+    marginTop: 2,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingTop: 24,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: "hidden",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#EFF6FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1E293B",
+    flex: 1,
+  },
+  badge: {
+    backgroundColor: "#4A90E2",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  cardContent: {
+    padding: 16,
+  },
+  clientName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1E293B",
+  },
+  dateText: {
+    fontSize: 16,
+    color: "#1E293B",
+    fontWeight: "500",
+    textTransform: "capitalize",
+  },
+  timeText: {
+    fontSize: 14,
+    color: "#64748B",
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  commentText: {
+    fontSize: 15,
+    color: "#475569",
+    lineHeight: 22,
+  },
   itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 4,
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  itemRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  itemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 12,
+  },
+  itemDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#4A90E2",
+    marginRight: 12,
+  },
+  itemName: {
+    fontSize: 15,
+    color: "#1E293B",
+    flex: 1,
+    fontWeight: "500",
+  },
+  quantityBadge: {
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  quantityText: {
+    fontSize: 14,
+    color: "#4A90E2",
+    fontWeight: "700",
   },
   pdfButton: {
-    backgroundColor: "#4A90E2",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 20,
+    marginTop: 8,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#4A90E2",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  pdfText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  pdfButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 18,
+  },
+  pdfText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 17,
+    marginLeft: 12,
+  },
   pdfHeader: {
     height: 100,
-    backgroundColor: "#4A90E2",
     flexDirection: "row",
     alignItems: "center",
     paddingTop: 50,
+    paddingHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   pdfHeaderTitle: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    marginLeft: 20,
+    marginLeft: 16,
   },
 });

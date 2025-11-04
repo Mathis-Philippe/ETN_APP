@@ -86,7 +86,6 @@ app.get("/order-pdf/:orderNumber", async (req, res) => {
       .eq("code_client", order.client_id)
       .single();
 
-    // 🧠 Crée les données pour le PDF
     const pdfBuffer = await generateOrderPdf({
       clientName: client?.nom || "",
       clientAddress: client?.adresse || "",
@@ -100,7 +99,6 @@ app.get("/order-pdf/:orderNumber", async (req, res) => {
       })),
     });
 
-    // ✅ Envoie le PDF directement au navigateur (inline)
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -116,5 +114,5 @@ app.get("/order-pdf/:orderNumber", async (req, res) => {
 // 🚀 Lancement du serveur
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Serveur PDF lancé sur http://localhost:${PORT}`);
+  console.log(`Serveur lancé sur http://localhost:${PORT}`);
 });

@@ -1,5 +1,15 @@
-###Lancer l'app
+#Lancer l'app
 
-npm start dans ETNApp
-npm run dev dans serveur -> cd server
-(ngrok http 3001)
+###Serveur
+
+cd server
+
+npm run dev
+
+###Ngrok
+
+ngrok http 3001
+
+###Expo
+
+npm start
