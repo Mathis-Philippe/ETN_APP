@@ -242,10 +242,10 @@ export default function CartScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Valider</Text>
-            <TextInput style={styles.input} placeholder="Prénom" value={firstName} onChangeText={setFirstName} />
-            <TextInput style={styles.input} placeholder="Nom" value={lastName} onChangeText={setLastName} />
-            <TextInput style={styles.input} placeholder="Numéro commande" value={orderNumber} onChangeText={setOrderNumber} />
-            <TextInput style={styles.input} placeholder="Commentaire (optionnel)" value={comment} onChangeText={setComment} />
+            <TextInput style={styles.input} placeholder="Prénom" value={firstName} placeholderTextColor="#00000063" onChangeText={setFirstName} />
+            <TextInput style={styles.input} placeholder="Nom" value={lastName} placeholderTextColor="#00000063" onChangeText={setLastName} />
+            <TextInput style={styles.input} placeholder="Numéro commande" value={orderNumber} placeholderTextColor="#00000063" onChangeText={setOrderNumber} />
+            <TextInput style={styles.input} placeholder="Commentaire (optionnel)" value={comment} placeholderTextColor="#00000063" onChangeText={setComment} />
             <TouchableOpacity style={styles.saveButton} onPress={handleCheckout}>
               <Text style={styles.saveText}>Valider</Text>
             </TouchableOpacity>
