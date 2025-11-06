@@ -17,42 +17,49 @@ const screenWidth = Dimensions.get("window").width - 40;
 
 export default function UsersBack() {
   const [users, setUsers] = useState<any[]>([]);
+  const [loginData, setLoginData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchName, setSearchName] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUserOrders, setSelectedUserOrders] = useState<any[]>([]);
   const [selectedUserName, setSelectedUserName] = useState("");
-
-  const [sortOption, setSortOption] = useState<"recent" | "alphabet" | "mostActive">(
-    "recent"
-  );
+  const [sortOption, setSortOption] = useState<"recent" | "alphabet" | "mostActive">("recent");
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
+  // ---------------- Fetch utilisateurs et logins ----------------
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       setLoading(true);
-      const { data, error } = await supabase.from("clients").select("*");
-      if (error) console.error("Erreur récupération utilisateurs :", error);
-      setUsers(data || []);
+
+      const { data: clientsData, error: clientsError } = await supabase.from("clients").select("*");
+      if (clientsError) console.error("Erreur récupération utilisateurs :", clientsError);
+      setUsers(clientsData || []);
+
+      const { data: loginsFetched, error: loginsError } = await supabase.from("logins").select("*");
+      if (loginsError) console.error("Erreur récupération logins :", loginsError);
+      setLoginData(loginsFetched || []);
+
       setLoading(false);
     };
-    fetchUsers();
+
+    fetchData();
   }, []);
 
-  // Filtrage par nom
+  if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+
+  // ---------------- Filtrage et tri ----------------
   let filteredUsers = users.filter((u) =>
     u.nom.toLowerCase().includes(searchName.toLowerCase())
   );
 
-  // Tri des utilisateurs
   filteredUsers = filteredUsers.sort((a, b) => {
-    if (sortOption === "alphabet") {
-      return a.nom.localeCompare(b.nom);
-    } else if (sortOption === "recent") {
+    if (sortOption === "alphabet") return a.nom.localeCompare(b.nom);
+    if (sortOption === "recent") {
       const dateA = a.last_login ? new Date(a.last_login) : new Date(0);
       const dateB = b.last_login ? new Date(b.last_login) : new Date(0);
       return dateB.getTime() - dateA.getTime();
-    } else if (sortOption === "mostActive") {
+    }
+    if (sortOption === "mostActive") {
       const countA = a.orders_count || 0;
       const countB = b.orders_count || 0;
       return countB - countA;
@@ -60,23 +67,33 @@ export default function UsersBack() {
     return 0;
   });
 
-  // Statistiques : utilisateurs actifs par jour
+  // ---------------- Statistiques ----------------
   const activeUsersByDay: Record<string, number> = {};
-  users.forEach((u) => {
-    if (u.last_login) {
-      const date = new Date(u.last_login + "Z").toLocaleDateString("fr-FR", {
-        timeZone: "Europe/Paris",
-      });
-      activeUsersByDay[date] = (activeUsersByDay[date] || 0) + 1;
-    }
+
+  loginData.forEach((login) => {
+    // On utilise la colonne `date` si elle existe
+    const loginDate = login.date ? new Date(login.date) : new Date(login.created_at);
+    if (isNaN(loginDate.getTime())) return;
+
+    // Format JJ/MM
+    const dayMonth = loginDate.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+    });
+
+    activeUsersByDay[dayMonth] = (activeUsersByDay[dayMonth] || 0) + 1;
   });
-  const dates = Object.keys(activeUsersByDay).sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime()
-  );
+
+  // Trier les dates du plus ancien au plus récent
+  const dates = Object.keys(activeUsersByDay).sort((a, b) => {
+    const [dayA, monthA] = a.split("/").map(Number);
+    const [dayB, monthB] = b.split("/").map(Number);
+    return new Date(2025, monthA - 1, dayA).getTime() - new Date(2025, monthB - 1, dayB).getTime();
+  });
+
   const activeCounts = dates.map((d) => activeUsersByDay[d]);
 
-  if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
-
+  // ---------------- View commandes utilisateur ----------------
   const viewUserOrders = async (user: any) => {
     const { data, error } = await supabase
       .from("orders")
@@ -178,9 +195,7 @@ export default function UsersBack() {
                   style={{ borderRadius: 10 }}
                 />
               ) : (
-                <Text style={{ textAlign: "center", padding: 20 }}>
-                  Aucune connexion enregistrée
-                </Text>
+                <Text style={{ textAlign: "center", padding: 20 }}>Aucune connexion enregistrée</Text>
               )}
             </View>
           </>
@@ -196,13 +211,10 @@ export default function UsersBack() {
             <Text>
               Dernière connexion :{" "}
               {item.last_login
-                ? new Date(item.last_login + "Z").toLocaleString("fr-FR", {
-                    timeZone: "Europe/Paris",
-                  })
+                ? new Date(item.last_login + "Z").toLocaleString("fr-FR", { timeZone: "Europe/Paris" })
                 : "Jamais"}
             </Text>
 
-            {/* Actions */}
             <View style={styles.actions}>
               <TouchableOpacity
                 style={styles.actionBtn}
@@ -221,7 +233,6 @@ export default function UsersBack() {
         <Modal visible={modalVisible} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              {/* En-tête modal */}
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Commandes de {selectedUserName}</Text>
                 <TouchableOpacity onPress={() => setModalVisible(false)}>
@@ -229,7 +240,6 @@ export default function UsersBack() {
                 </TouchableOpacity>
               </View>
 
-              {/* Liste des commandes */}
               <FlatList
                 data={selectedUserOrders}
                 keyExtractor={(order) => order.id}
@@ -276,97 +286,23 @@ const chartConfig = {
 const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "700", marginBottom: 10 },
   subtitle: { fontSize: 18, fontWeight: "600", marginVertical: 10 },
-  chartCard: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-  userCard: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
+  chartCard: { backgroundColor: "#fff", padding: 15, borderRadius: 10, marginBottom: 20, shadowOpacity: 0.1, shadowRadius: 5 },
+  userCard: { backgroundColor: "#fff", padding: 15, borderRadius: 10, marginBottom: 10, shadowOpacity: 0.1, shadowRadius: 3 },
   bold: { fontWeight: "700", marginBottom: 5 },
   actions: { flexDirection: "row", marginTop: 10 },
-  actionBtn: {
-    backgroundColor: "#4A90E2",
-    padding: 8,
-    borderRadius: 6,
-    marginRight: 10,
-  },
+  actionBtn: { backgroundColor: "#4A90E2", padding: 8, borderRadius: 6, marginRight: 10 },
   actionText: { color: "#fff", fontWeight: "600" },
   searchBar: { marginBottom: 15 },
-  searchInput: {
-    backgroundColor: "#fff",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    fontSize: 16,
-    color: "#000",
-  },
-  dropdownBtn: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-  },
-  dropdownMenu: {
-    position: "absolute",
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    width: "100%",
-    marginTop: 45,
-    zIndex: 1000,
-  },
+  searchInput: { backgroundColor: "#fff", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: "#ccc", fontSize: 16, color: "#000" },
+  dropdownBtn: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10 },
+  dropdownMenu: { position: "absolute", backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc", borderRadius: 8, width: "100%", marginTop: 45, zIndex: 1000 },
   dropdownItem: { padding: 10 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    padding: 15,
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 15,
-    maxHeight: "85%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  closeBtn: {
-    fontSize: 20,
-    color: "#E63946",
-    fontWeight: "700",
-  },
-  orderCard: {
-    backgroundColor: "#f9f9f9",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
-  },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 15 },
+  modalContent: { backgroundColor: "#fff", borderRadius: 16, padding: 15, maxHeight: "85%" },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  modalTitle: { fontSize: 20, fontWeight: "700" },
+  closeBtn: { fontSize: 20, color: "#E63946", fontWeight: "700" },
+  orderCard: { backgroundColor: "#f9f9f9", padding: 12, borderRadius: 10, marginBottom: 10, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 },
   orderNumber: { fontWeight: "700", marginBottom: 4 },
   orderDate: { fontSize: 14, color: "#555", marginBottom: 4 },
   orderComment: { fontStyle: "italic", marginBottom: 6 },

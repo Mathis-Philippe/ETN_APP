@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
+  TouchableWithoutFeedback,
 } from "react-native";
 import supabase from "../../lib/supabase";
 import { LineChart, BarChart, PieChart } from "react-native-chart-kit";
@@ -20,74 +21,47 @@ export default function StatsBack() {
   const [clients, setClients] = useState<any[]>([]);
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
 
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; value: number; label: string } | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-
-      const { data: ordersData, error: ordersError } = await supabase
-        .from("orders")
-        .select("*");
-
-      const { data: clientsData, error: clientsError } = await supabase
-        .from("clients")
-        .select("code_client, nom");
-
+      const { data: ordersData, error: ordersError } = await supabase.from("orders").select("*");
+      const { data: clientsData, error: clientsError } = await supabase.from("clients").select("code_client, nom");
       if (ordersError) console.error(ordersError);
       if (clientsError) console.error(clientsError);
-
       setOrders(ordersData || []);
       setClients(clientsData || []);
       setLoading(false);
     };
-
     fetchData();
   }, []);
 
-  if (loading)
-    return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+  if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
 
-  // ------------------------
-  // Fonctions de regroupement
-  // ------------------------
+  // ------------------------ Group orders by period ------------------------
   const groupOrders = (orders: any[], type: "day" | "week" | "month") => {
     const result: Record<string, number> = {};
-
     orders.forEach((o) => {
       const date = new Date(o.created_at);
       let key = "";
-
-      if (type === "day") {
-        key = date.toLocaleDateString("fr-FR");
-      } else if (type === "week") {
-        const week = Math.ceil(
-          ((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) /
-            86400000 +
-            new Date(date.getFullYear(), 0, 1).getDay() +
-            1) /
-            7
-        );
+      if (type === "day") key = date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+      else if (type === "week") {
+        const week = Math.ceil(((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(date.getFullYear(), 0, 1).getDay() + 1) / 7);
         key = `Semaine ${week} ${date.getFullYear()}`;
       } else if (type === "month") {
-        key = `${date.toLocaleString("fr-FR", {
-          month: "short",
-        })} ${date.getFullYear()}`;
+        key = `${date.toLocaleString("fr-FR", { month: "short" })} ${date.getFullYear()}`;
       }
-
       result[key] = (result[key] || 0) + 1;
     });
-
     return result;
   };
 
   const ordersByPeriod = groupOrders(orders, period);
-  const labels = Object.keys(ordersByPeriod).sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime()
-  );
+  const labels = Object.keys(ordersByPeriod).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   const dataValues = labels.map((d) => ordersByPeriod[d]);
 
-  // ------------------------
-  // Top clients
-  // ------------------------
+  // ------------------------ Top clients ------------------------
   const ordersByClient: Record<string, number> = {};
   orders.forEach((o) => {
     ordersByClient[o.client_id] = (ordersByClient[o.client_id] || 0) + 1;
@@ -101,65 +75,76 @@ export default function StatsBack() {
       return { name: client?.nom ?? client_id, count };
     });
 
+  // ------------------------ Handle touches outside ------------------------
+  const hideTooltip = () => setTooltip(null);
   const commented = orders.filter((o) => o.comment && o.comment.trim() !== "").length;
   const uncommented = orders.length - commented;
-
+  
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>📊 Statistiques des commandes</Text>
+    <TouchableWithoutFeedback onPress={hideTooltip}>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>📊 Statistiques des commandes</Text>
 
-      {/* Sélecteur de période */}
-      <View style={styles.tabs}>
-        {(["day", "week", "month"] as const).map((p) => (
-          <TouchableOpacity
-            key={p}
-            style={[
-              styles.tab,
-              period === p ? styles.activeTab : styles.inactiveTab,
-            ]}
-            onPress={() => setPeriod(p)}
-          >
-            <Text
-              style={period === p ? styles.activeText : styles.inactiveText}
+        {/* Sélecteur de période */}
+        <View style={styles.tabs}>
+          {(["day", "week", "month"] as const).map((p) => (
+            <TouchableOpacity
+              key={p}
+              style={[styles.tab, period === p ? styles.activeTab : styles.inactiveTab]}
+              onPress={() => setPeriod(p)}
             >
-              {p === "day"
-                ? "Jour"
-                : p === "week"
-                ? "Semaine"
-                : "Mois"}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text style={period === p ? styles.activeText : styles.inactiveText}>
+                {p === "day" ? "Jour" : p === "week" ? "Semaine" : "Mois"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      {/* Chart commandes */}
-      <LineChart
-        data={{
-          labels,
-          datasets: [{ data: dataValues }],
-        }}
-        width={screenWidth}
-        height={220}
-        chartConfig={chartConfig}
-        style={styles.chart}
-      />
+        {/* LineChart */}
+        <View>
+          <LineChart
+            data={{ labels, datasets: [{ data: dataValues }] }}
+            width={screenWidth}
+            height={220}
+            chartConfig={{ ...chartConfig, propsForDots: { r: "6" } }}
+            style={styles.chart}
+            fromZero
+            yAxisInterval={1} // valeurs entières
+            segments={Math.max(...dataValues)} // ajuster l'échelle
+            onDataPointClick={(data) => {
+              setTooltip({ x: data.x, y: data.y, value: Math.round(data.value), label: labels[data.index] });
+            }}
+            formatYLabel={(y) => Math.round(Number(y)).toString()}
+          />
+          {tooltip && (
+            <View style={[styles.tooltip, { left: tooltip.x - 25, bottom: 220 - tooltip.y + 10 }]}>
+              <Text style={styles.tooltipText}>
+                {tooltip.value} commandes{"\n"}({tooltip.label})
+              </Text>
+            </View>
+          )}
+        </View>
 
-      {/* Top clients */}
-      <Text style={styles.subtitle}>Top 5 clients par nombre de commandes</Text>
-      <BarChart
-        data={{
-          labels: topClients.map((c) => c.name),
-          datasets: [{ data: topClients.map((c) => c.count) }],
-        }}
-        width={screenWidth}
-        height={220}
-        chartConfig={chartConfig}
-        style={styles.chart}
-        fromZero
-        yAxisLabel=""
-        yAxisSuffix=""
-      />
+        {/* BarChart */}
+        <Text style={styles.subtitle}>Top 5 clients par nombre de commandes</Text>
+        <BarChart
+          data={{
+            labels: topClients.map((c) => c.name),
+            datasets: [{ data: topClients.map((c) => c.count) }],
+          }}
+          width={screenWidth}
+          height={220}
+          chartConfig={chartConfig}
+          style={styles.chart}
+          fromZero
+          yAxisLabel=""
+          yAxisSuffix=""
+          showValuesOnTopOfBars
+          verticalLabelRotation={0}
+          formatYLabel={(y) => Math.round(Number(y)).toString()}
+        />
 
+             {/* Commandes commentées vs non commentées */}
       <Text style={styles.subtitle}>Commandes commentées vs non commentées</Text>
       <PieChart
         data={[
@@ -174,9 +159,8 @@ export default function StatsBack() {
         paddingLeft="15"
         absolute
       />
-
-
-    </ScrollView>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -187,9 +171,7 @@ const chartConfig = {
   labelColor: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
   strokeWidth: 2,
   barPercentage: 0.5,
-  propsForLabels: {
-    fontSize: 8,
-  },
+  propsForLabels: { fontSize: 10 },
 };
 
 const styles = StyleSheet.create({
@@ -203,4 +185,12 @@ const styles = StyleSheet.create({
   inactiveTab: { backgroundColor: "#ddd" },
   activeText: { color: "#fff", fontWeight: "700", textAlign: "center" },
   inactiveText: { color: "#333", fontWeight: "600", textAlign: "center" },
+  tooltip: {
+    position: "absolute",
+    backgroundColor: "#1e90ff",
+    padding: 6,
+    borderRadius: 6,
+    zIndex: 1000,
+  },
+  tooltipText: { color: "#fff", fontWeight: "700", fontSize: 12, textAlign: "center" },
 });

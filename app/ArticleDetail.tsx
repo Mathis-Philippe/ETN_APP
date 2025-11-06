@@ -119,7 +119,6 @@ export default function ArticleDetail() {
       code: article.reference,
       designation: article.designation,
       quantite: q,
-      prix: 0,
     });
 
     Alert.alert("Ajouté ✅", "Article ajouté au panier");

@@ -5,8 +5,6 @@ type Article = {
   code: string;
   designation: string;
   quantite: number;
-  prix: number;
-  // Plus de stock
 };
 
 type CartContextType = {
