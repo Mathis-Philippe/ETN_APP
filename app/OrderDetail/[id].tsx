@@ -86,7 +86,6 @@ export default function OrderDetailScreen() {
 
   return (
     <View style={styles.mainContainer}>
-      {/* Header avec gradient */}
       <LinearGradient
         colors={['#4A90E2', '#357ABD']}
         style={styles.headerGradient}
@@ -236,7 +235,10 @@ export default function OrderDetailScreen() {
             <Text style={styles.pdfHeaderTitle}>Bon de commande</Text>
           </LinearGradient>
           <WebView
-            source={{ uri: pdfUrl }}
+            source={{ 
+              uri: pdfUrl,
+              headers: { "ngrok-skip-browser-warning": "true" } 
+            }}
             originWhitelist={["*"]}
             style={{ flex: 1 }}
             startInLoadingState
