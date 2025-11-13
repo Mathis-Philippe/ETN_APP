@@ -141,7 +141,6 @@ export default function StatsBack() {
           yAxisSuffix=""
           showValuesOnTopOfBars
           verticalLabelRotation={0}
-          formatYLabel={(y) => Math.round(Number(y)).toString()}
         />
 
              {/* Commandes commentées vs non commentées */}
