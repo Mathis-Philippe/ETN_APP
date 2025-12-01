@@ -28,7 +28,10 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "display": "standalone", 
+      "name": "ETNApp Client",
+      "shortName": "ETN"
     },
     "plugins": [
       "expo-router",
