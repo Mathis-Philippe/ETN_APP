@@ -1,4 +1,3 @@
-import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -7,14 +6,20 @@ import { useAuth } from "../../context/AuthContext";
 import { parseQrData } from "../../lib/qrParser";
 import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
+// NOUVEAU: Import du composant QrScanner cross-platform
+import QrScanner from "../../components/QrScanner"; 
+// REMPLACÉ: Suppression des imports CameraView et useCameraPermissions
 
 export default function HomeScreen() {
-  const [permission, requestPermission] = useCameraPermissions();
+  // SUPPRIMÉ: Les permissions sont gérées dans QrScanner.
+  // const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
   const router = useRouter();
   const { client } = useAuth();
 
+  // SUPPRIMÉ: Toute la logique de vérification de permission
+  /*
   if (!permission) return <View />;
   if (!permission.granted) {
     return (
@@ -26,8 +31,10 @@ export default function HomeScreen() {
       </View>
     );
   }
+  */
 
-  const handleScan = ({ data }: { data: string }) => {
+  // CHANGEMENT DE SIGNATURE: onScan fournit la chaîne 'data' directement
+  const handleScan = (data: string) => {
     if (scanned) return;
     setScanned(true);
     setScanning(false);
@@ -35,10 +42,10 @@ export default function HomeScreen() {
     const { codeClient, reference } = parseQrData(data);
 
     if (reference) {
-      // QR de connexion
+      // QR d'article
       router.push({ pathname: "/ArticleDetail", params: { qrData: data } });
     } else if (codeClient) {
-      // QR d'article
+      // QR de connexion (devrait être sur l'écran Login, mais gérons l'erreur)
       Toast.show({
         type: "error",
         text1: "QR code invalide",
@@ -84,18 +91,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </>
       ) : (
-        <CameraView
-          style={styles.camera}
-          facing="back"
-          onBarcodeScanned={scanned ? undefined : handleScan}
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"], // 👈 important
-          }}
-        >
-          <View style={styles.overlay}>
-            <View style={styles.scanBox} />
-          </View>
-        </CameraView>
+        // REMPLACÉ: Utilisation du QrScanner cross-platform
+        <View style={styles.cameraContainer}> 
+          <QrScanner
+            onScan={handleScan}
+          />
+        </View>
       )}
     </View>
   );
@@ -119,6 +120,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   scanText: { color: "#fff", fontSize: 17, fontWeight: "600" },
+  // AJOUTÉ: style manquant pour le conteneur du scanner web
+  cameraContainer: { 
+    flex: 1, 
+    width: "100%", 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   camera: { flex: 1, width: "100%" },
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.2)", justifyContent: "center", alignItems: "center" },
   scanBox: { width: 260, height: 260, borderWidth: 3, borderColor: "#1e90ff", borderRadius: 20 },

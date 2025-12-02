@@ -1,4 +1,3 @@
-import { CameraView, useCameraPermissions } from "expo-camera";
 import { useState } from "react";
 import {
   Modal,
@@ -11,20 +10,26 @@ import {
 import Toast from "react-native-toast-message";
 import { useAuth } from "../../context/AuthContext";
 import { parseQrData } from "../../lib/qrParser";
+// NOUVEL IMPORT: Utilisation du composant cross-platform
+import QrScanner from "../../components/QrScanner"; 
+// NOTE: Vous n'avez plus besoin d'importer useCameraPermissions d'Expo ici.
+
 
 export default function LoginScreen() {
   const { loginWithQr } = useAuth();
-  const [permission, requestPermission] = useCameraPermissions();
+  // REMPLACÉ: Les permissions sont gérées dans QrScanner
+  // const [permission, requestPermission] = useCameraPermissions(); 
   const [cameraVisible, setCameraVisible] = useState(false);
   const [scanned, setScanned] = useState(false);
 
-  const handleScan = async (result: { data: string }) => {
+  // CHANGEMENT DE SIGNATURE: onScan fournit la chaîne 'data' directement
+  const handleScan = async (data: string) => { 
     if (scanned) return;
     setScanned(true);
 
-    console.log("📷 QR Code Scanné:", result.data);
+    console.log("📷 QR Code Scanné:", data);
 
-    const { codeClient } = parseQrData(result.data);
+    const { codeClient } = parseQrData(data);
 
     if (!codeClient) {
       Toast.show({
@@ -37,7 +42,7 @@ export default function LoginScreen() {
       return;
     }
 
-    const success = await loginWithQr(result.data);
+    const success = await loginWithQr(data);
     setCameraVisible(false);
 
     if (!success) {
@@ -70,7 +75,7 @@ export default function LoginScreen() {
       <TouchableOpacity
         style={styles.scanButton}
         onPress={() => {
-          if (!permission?.granted) requestPermission();
+          // L'appel aux permissions est géré par QrScanner si nécessaire
           setScanned(false);
           setCameraVisible(true);
         }}
@@ -80,14 +85,12 @@ export default function LoginScreen() {
 
       {/* Caméra */}
       <Modal visible={cameraVisible} animationType="slide">
-        <CameraView
-          style={{ flex: 1 }}
-          facing="back"
-          barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-          onBarcodeScanned={(result) => handleScan(result)}
+        {/* REMPLACÉ: Utilisation du QrScanner cross-platform */}
+        <QrScanner
+          onScan={(data) => handleScan(data)}
         />
-
-        {/* Cadre de scan */}
+        
+        {/* Cadre de scan (laissez-le pour l'overlay, mais il peut nécessiter des ajustements) */}
         <View style={styles.scanFrame} />
 
         {/* Bouton fermer */}
