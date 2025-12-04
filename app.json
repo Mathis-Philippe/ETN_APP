@@ -30,7 +30,7 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png",
       "display": "standalone", 
-      "name": "ETNApp Client",
+      "name": "ETNApp",
       "shortName": "ETN"
     },
     "plugins": [

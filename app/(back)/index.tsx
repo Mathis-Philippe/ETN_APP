@@ -1,140 +1,118 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
-import supabase from "../../lib/supabase";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Svg, { Path, Rect } from "react-native-svg";
+import { useAuth } from "../../context/AuthContext";
+import { parseQrData } from "../../lib/qrParser";
+import Toast from "react-native-toast-message";
+import { StatusBar } from "expo-status-bar";
+// MODIFIÉ: Import du composant QrScanner cross-platform
+import QrScanner from "../../components/QrScanner"; 
 
-export default function OrdersBack() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function HomeScreen() {
+  // SUPPRIMÉ: [permission, requestPermission] car géré dans QrScanner
+  const [scanning, setScanning] = useState(false);
+  const [scanned, setScanned] = useState(false);
+  const router = useRouter();
+  const { client } = useAuth();
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
+  // SUPPRIMÉ: Toute la logique de vérification de permission initiale.
 
-      // 1️⃣ Récupérer toutes les commandes
-      const { data: ordersData, error: ordersError } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
+  // CHANGÉ: onScan fournit la chaîne 'data' directement
+  const handleScan = (data: string) => {
+    if (scanned) return;
+    setScanned(true);
+    setScanning(false);
 
-      if (ordersError) {
-        console.error("Erreur chargement commandes:", ordersError);
-        setLoading(false);
-        return;
-      }
+    const { codeClient, reference } = parseQrData(data);
 
-      // 2️⃣ Récupérer tous les clients
-      const { data: clientsData, error: clientsError } = await supabase
-        .from("clients")
-        .select("code_client, nom, adresse, code_postal, ville");
+    if (reference) {
+      // QR d'article
+      router.push({ pathname: "/ArticleDetail", params: { qrData: data } });
+    } else if (codeClient) {
+      // QR de connexion (gestion d'erreur)
+      Toast.show({
+        type: "error",
+        text1: "QR code invalide",
+        text2: "Impossible de reconnaitre ce QR code.",
+    });
+    setTimeout(() => setScanned(false), 1500);
+  }
+};
 
-      if (clientsError) {
-        console.error("Erreur chargement clients:", clientsError);
-        setLoading(false);
-        return;
-      }
-
-      // 3️⃣ Associer chaque commande à son client via code_client
-      const ordersWithClient = ordersData.map(o => {
-        const client = clientsData.find(c => c.code_client === o.client_id);
-        return { ...o, client };
-      });
-
-      setOrders(ordersWithClient);
-      setLoading(false);
-    };
-
-    fetchOrders();
-  }, []);
-
-  if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
-
-  // Statistiques
-  const totalClients = new Set(orders.map(o => o.client?.nom)).size;
-  const totalOrders = orders.length;
-
-  type Client = {
-    code_client: string;
-    nom: string;
-    adresse: string;
-    code_postal: string;
-    ville: string;
-  };
-
-  type Order = {
-    id: string;
-    client_id: string;
-    first_name: string;
-    last_name: string;
-    order_number: string;
-    created_at: string;
-    comment?: string;
-    items?: { designation: string; quantite: number; prix?: number }[];
-    client?: Client | null;
-  };
-
-  const groupedOrders: Record<string, Order[]> = orders.reduce((acc, order) => {
-    const clientName = order.client?.nom || "—";
-    if (!acc[clientName]) acc[clientName] = [];
-    acc[clientName].push(order);
-    return acc;
-  }, {} as Record<string, Order[]>);
+  function QrSvg({ size = 28 }: { size?: number }) {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Rect x="2" y="2" width="6" height="6" stroke="#fff" strokeWidth="1.5" />
+        <Rect x="16" y="2" width="6" height="6" stroke="#fff" strokeWidth="1.5" />
+        <Rect x="2" y="16" width="6" height="6" stroke="#fff" strokeWidth="1.5" />
+        <Path d="M9 9h2v2H9zM9 16h2v2H9zM16 9h2v2h-2zM13 13h3v3h-3z" fill="#fff" />
+      </Svg>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>📦 Commandes</Text>
+    <View style={styles.container}>
+      <StatusBar style="dark" />
+      {!scanning ? (
+        <>
+          <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 20, textAlign: "center" }}>
+            Bienvenue <Text>{client?.nom ?? ""}</Text>
+          </Text>
 
-      {/* Statistiques */}
-      <View style={styles.stats}>
-        <Text>Total commandes : {totalOrders}</Text>
-        <Text>Total clients : {totalClients}</Text>
-      </View>
+          <Text style={{ fontSize: 16, color: "#555", textAlign: "center", marginBottom: 40 }}>
+            Scannez un QR code pour ajouter un article.
+          </Text>
 
-      {/* Liste groupée par client */}
-      {Object.entries(groupedOrders).map(([clientName, clientOrders]) => (
-        <View key={clientName} style={styles.clientBlock}>
-          <Text style={styles.clientTitle}>{clientName}</Text>
-
-          {clientOrders
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            .map(order => (
-              <View key={order.id} style={styles.card}>
-                <Text style={styles.bold}>Commande #{order.order_number}</Text>
-                <Text>Client : {order.first_name} {order.last_name}</Text>
-                <Text>Adresse : {order.client?.adresse}, {order.client?.code_postal} {order.client?.ville}</Text>
-                <Text>Date : {new Date(order.created_at).toLocaleString("fr-FR")}</Text>
-                <Text>Commentaire : {order.comment || "—"}</Text>
-
-                {order.items && order.items.length > 0 && (
-                  <View style={styles.itemsContainer}>
-                    <Text style={styles.itemsTitle}>Articles commandés :</Text>
-                    {order.items.map((i: any, idx: number) => (
-                      <Text key={idx}>• {i.designation} × {i.quantite} {i.prix ? `(${i.prix} €)` : ""}</Text>
-                    ))}
-                  </View>
-                )}
-              </View>
-            ))}
+          <TouchableOpacity
+            style={styles.scanButton}
+            onPress={() => {
+              setScanning(true);
+              setScanned(false);
+            }}
+          >
+            <QrSvg size={28} />
+            <Text style={styles.scanText}>Scanner un QR</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        // REMPLACÉ: Utilisation du QrScanner cross-platform
+        <View style={styles.cameraContainer}> 
+          <QrScanner
+            onScan={handleScan}
+          />
         </View>
-      ))}
-    </ScrollView>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#F7F9FC" },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 10 },
-  stats: { marginBottom: 20 },
-  clientBlock: { marginBottom: 25 },
-  clientTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8 },
-  card: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+  container: { flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20, backgroundColor: "#fff" },
+  scanButton: {
+    backgroundColor: "#1e90ff",
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    shadowColor: "#1e90ff",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
-  bold: { fontWeight: "700", marginBottom: 5 },
-  itemsContainer: { marginTop: 10 },
-  itemsTitle: { fontWeight: "600", marginBottom: 5 },
+  scanText: { color: "#fff", fontSize: 17, fontWeight: "600" },
+  cameraContainer: { 
+    flex: 1, 
+    width: "100%", 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  camera: { flex: 1, width: "100%" },
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.2)", justifyContent: "center", alignItems: "center" },
+  scanBox: { width: 260, height: 260, borderWidth: 3, borderColor: "#1e90ff", borderRadius: 20 },
+  buttonText: { color: "#1e90ff", fontSize: 16, fontWeight: "600", marginTop: 15 },
 });

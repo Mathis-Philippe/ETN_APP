@@ -65,7 +65,7 @@ app.post('/send-order-pdf', async (req, res) => {
 
 app.get("/order-pdf/:orderNumber", async (req, res) => {
   try {
-    const orderNumber = req.params.orderNumber;
+    const orderNumber = req.params.orderNumber as string;
 
     // 🧾 Récupère la commande
     const { data: order, error } = await supabase
@@ -110,6 +110,41 @@ app.get("/order-pdf/:orderNumber", async (req, res) => {
     res.status(500).send("Erreur serveur lors de la génération du PDF");
   }
 });
+
+
+app.get("/pdf-proxy/:orderNumber", async (req, res) => {
+  try {
+    const orderNumber = req.params.orderNumber;
+
+    // URL ngrok existante
+    const ngrokUrl = `${process.env.NGROK_BASE_URL}/order-pdf/${orderNumber}`;
+
+    // On fait un fetch vers ngrok en ajoutant le header
+    const response = await fetch(ngrokUrl, {
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).send("Erreur lors de la récupération du PDF");
+    }
+
+    const buffer = await response.arrayBuffer();
+
+    // On renvoie le PDF directement
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="Commande-${orderNumber}.pdf"`
+    );
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error("Erreur /pdf-proxy/:orderNumber", err);
+    res.status(500).send("Erreur serveur lors de la récupération du PDF");
+  }
+});
+
 
 // 🚀 Lancement du serveur
 const PORT = process.env.PORT || 3000;

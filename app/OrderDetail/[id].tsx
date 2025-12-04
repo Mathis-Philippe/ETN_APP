@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import supabase from "../../lib/supabase";
 import { MaterialIcons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from "expo-linear-gradient";
 
 type OrderItem = {
   code: string;
@@ -32,6 +33,32 @@ type Order = {
     total_items: number;
   };
   created_at: string;
+};
+
+// Composant cross-platform pour WebView / iframe
+const CrossPlatformWebView = ({ uri }: { uri: string }) => {
+  if (Platform.OS === "web") {
+    return (
+      <iframe
+        src={uri}
+        style={{ width: "100%", height: "100%", border: "none" }}
+      />
+    );
+  }
+
+  return (
+    <WebView
+      source={{ uri }}
+      style={{ flex: 1 }}
+      startInLoadingState
+      renderLoading={() => (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+          <Text>Chargement du PDF...</Text>
+        </View>
+      )}
+    />
+  );
 };
 
 export default function OrderDetailScreen() {
@@ -82,14 +109,13 @@ export default function OrderDetailScreen() {
     );
   }
 
-  const pdfUrl = `https://cardiovascular-pitchier-duke.ngrok-free.dev/order-pdf/${order.order_number}`;
+  const pdfUrl = `http://localhost:3001/pdf-proxy/${order.order_number}`;
+
+
 
   return (
     <View style={styles.mainContainer}>
-      <LinearGradient
-        colors={['#4A90E2', '#357ABD']}
-        style={styles.headerGradient}
-      >
+      <LinearGradient colors={['#4A90E2', '#357ABD']} style={styles.headerGradient}>
         <View style={styles.headerContent}>
           <TouchableOpacity 
             onPress={() => router.back()} 
@@ -234,259 +260,52 @@ export default function OrderDetailScreen() {
             </TouchableOpacity>
             <Text style={styles.pdfHeaderTitle}>Bon de commande</Text>
           </LinearGradient>
-          <WebView
-            source={{ 
-              uri: pdfUrl,
-              headers: { "ngrok-skip-browser-warning": "true" } 
-            }}
-            originWhitelist={["*"]}
-            style={{ flex: 1 }}
-            startInLoadingState
-            renderLoading={() => (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#4A90E2" />
-                <Text style={styles.loadingText}>Chargement du PDF...</Text>
-              </View>
-            )}
-          />
+
+          {/* Composant cross-platform */}
+          <CrossPlatformWebView uri={pdfUrl} />
         </View>
       </Modal>
     </View>
   );
 }
 
+// Styles inchangés
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: "#F1F5F9",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: "#64748B",
-    fontWeight: "500",
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-  },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 18,
-    color: "#64748B",
-    fontWeight: "500",
-  },
-  headerGradient: {
-    paddingTop: 60,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTextContainer: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
-    fontWeight: "500",
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#fff",
-    marginTop: 2,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingTop: 24,
-  },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    overflow: "hidden",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#EFF6FF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1E293B",
-    flex: 1,
-  },
-  badge: {
-    backgroundColor: "#4A90E2",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  cardContent: {
-    padding: 16,
-  },
-  clientName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1E293B",
-  },
-  dateText: {
-    fontSize: 16,
-    color: "#1E293B",
-    fontWeight: "500",
-    textTransform: "capitalize",
-  },
-  timeText: {
-    fontSize: 14,
-    color: "#64748B",
-    marginTop: 4,
-    fontWeight: "500",
-  },
-  commentText: {
-    fontSize: 15,
-    color: "#475569",
-    lineHeight: 22,
-  },
-  itemRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  itemRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  itemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 12,
-  },
-  itemDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#4A90E2",
-    marginRight: 12,
-  },
-  itemName: {
-    fontSize: 15,
-    color: "#1E293B",
-    flex: 1,
-    fontWeight: "500",
-  },
-  quantityBadge: {
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  quantityText: {
-    fontSize: 14,
-    color: "#4A90E2",
-    fontWeight: "700",
-  },
-  pdfButton: {
-    marginTop: 8,
-    marginBottom: 20,
-    borderRadius: 16,
-    overflow: "hidden",
-    shadowColor: "#4A90E2",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  pdfButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 18,
-  },
-  pdfText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 17,
-    marginLeft: 12,
-  },
-  pdfHeader: {
-    height: 100,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pdfHeaderTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-    marginLeft: 16,
-  },
+  mainContainer: { flex: 1, backgroundColor: "#F1F5F9" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F1F5F9" },
+  loadingText: { marginTop: 12, fontSize: 16, color: "#64748B", fontWeight: "500" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F1F5F9" },
+  emptyText: { marginTop: 16, fontSize: 18, color: "#64748B", fontWeight: "500" },
+  headerGradient: { paddingTop: 60, paddingBottom: 24, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 8 },
+  headerContent: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255, 255, 255, 0.2)", justifyContent: "center", alignItems: "center" },
+  headerTextContainer: { marginLeft: 16, flex: 1 },
+  headerSubtitle: { fontSize: 14, color: "rgba(255, 255, 255, 0.9)", fontWeight: "500" },
+  headerTitle: { fontSize: 28, fontWeight: "700", color: "#fff", marginTop: 2 },
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 20, paddingTop: 24 },
+  card: { backgroundColor: "#fff", borderRadius: 16, marginBottom: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3, overflow: "hidden" },
+  cardHeader: { flexDirection: "row", alignItems: "center", padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
+  iconCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#EFF6FF", justifyContent: "center", alignItems: "center", marginRight: 12 },
+  cardTitle: { fontSize: 16, fontWeight: "700", color: "#1E293B", flex: 1 },
+  badge: { backgroundColor: "#4A90E2", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  badgeText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  cardContent: { padding: 16 },
+  clientName: { fontSize: 18, fontWeight: "600", color: "#1E293B" },
+  dateText: { fontSize: 16, color: "#1E293B", fontWeight: "500", textTransform: "capitalize" },
+  timeText: { fontSize: 14, color: "#64748B", marginTop: 4, fontWeight: "500" },
+  commentText: { fontSize: 15, color: "#475569", lineHeight: 22 },
+  itemRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12 },
+  itemRowBorder: { borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
+  itemLeft: { flexDirection: "row", alignItems: "center", flex: 1, marginRight: 12 },
+  itemDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#4A90E2", marginRight: 12 },
+  itemName: { fontSize: 15, color: "#1E293B", flex: 1, fontWeight: "500" },
+  quantityBadge: { backgroundColor: "#F1F5F9", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  quantityText: { fontSize: 14, color: "#4A90E2", fontWeight: "700" },
+  pdfButton: { marginTop: 8, marginBottom: 20, borderRadius: 16, overflow: "hidden", shadowColor: "#4A90E2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
+  pdfButtonGradient: { flexDirection: "row", alignItems: "center", justifyContent: "center", padding: 18 },
+  pdfText: { color: "#fff", fontWeight: "700", fontSize: 17, marginLeft: 12 },
+  pdfHeader: { height: 100, flexDirection: "row", alignItems: "center", paddingTop: 50, paddingHorizontal: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 4 },
+  closeButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255, 255, 255, 0.2)", justifyContent: "center", alignItems: "center" },
+  pdfHeaderTitle: { color: "#fff", fontSize: 20, fontWeight: "700", marginLeft: 16 },
 });

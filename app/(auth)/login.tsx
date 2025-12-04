@@ -10,20 +10,18 @@ import {
 import Toast from "react-native-toast-message";
 import { useAuth } from "../../context/AuthContext";
 import { parseQrData } from "../../lib/qrParser";
-// NOUVEL IMPORT: Utilisation du composant cross-platform
-import QrScanner from "../../components/QrScanner"; 
-// NOTE: Vous n'avez plus besoin d'importer useCameraPermissions d'Expo ici.
-
+// MODIFIÉ: Import du composant QrScanner cross-platform (qui gère la logique de la caméra native/web)
+import QrScanner from "../../components/QrScanner";
 
 export default function LoginScreen() {
   const { loginWithQr } = useAuth();
-  // REMPLACÉ: Les permissions sont gérées dans QrScanner
-  // const [permission, requestPermission] = useCameraPermissions(); 
+  // SUPPRIMÉ: Les permissions sont maintenant gérées à l'intérieur de QrScanner.
+  // const [permission, requestPermission] = useCameraPermissions();
   const [cameraVisible, setCameraVisible] = useState(false);
   const [scanned, setScanned] = useState(false);
 
-  // CHANGEMENT DE SIGNATURE: onScan fournit la chaîne 'data' directement
-  const handleScan = async (data: string) => { 
+  // CHANGÉ: La fonction QrScanner fournit la chaîne de données scannées directement
+  const handleScan = async (data: string) => {
     if (scanned) return;
     setScanned(true);
 
@@ -62,10 +60,9 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Logo */}
+      {/* Logo, Titre, Subtitle restent inchangés */}
       <Image source={require("../../assets/images/etn.png")} style={styles.logo} />
 
-      {/* Titre */}
       <Text style={styles.title}>Bienvenue chez ETN</Text>
       <Text style={styles.subtitle}>
         Connectez-vous en scannant votre QR code client
@@ -75,7 +72,7 @@ export default function LoginScreen() {
       <TouchableOpacity
         style={styles.scanButton}
         onPress={() => {
-          // L'appel aux permissions est géré par QrScanner si nécessaire
+          // L'ouverture est gérée ici. Les permissions sont gérées à l'intérieur de QrScanner.
           setScanned(false);
           setCameraVisible(true);
         }}
@@ -87,10 +84,10 @@ export default function LoginScreen() {
       <Modal visible={cameraVisible} animationType="slide">
         {/* REMPLACÉ: Utilisation du QrScanner cross-platform */}
         <QrScanner
-          onScan={(data) => handleScan(data)}
+          onScan={handleScan} // Passe la fonction de scan
         />
-        
-        {/* Cadre de scan (laissez-le pour l'overlay, mais il peut nécessiter des ajustements) */}
+
+        {/* Cadre de scan (laissez-le si vous voulez l'overlay visuel) */}
         <View style={styles.scanFrame} />
 
         {/* Bouton fermer */}
