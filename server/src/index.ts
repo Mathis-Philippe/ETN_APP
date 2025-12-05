@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
+import cors from 'cors';
 import { sendOrderEmail } from './mail.ts';
 import { generateOrderPdf } from './pdf.ts';
 import supabase from './supabaseClient.ts';
@@ -8,6 +9,38 @@ import supabase from './supabaseClient.ts';
 dotenv.config();
 const app = express();
 app.use(bodyParser.json({ limit: '1mb' }));
+
+const corsOptions = {
+  // Autorise toutes les origines (pour le développement avec Expo/Ngrok)
+  origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
+app.use(cors(corsOptions));
+
+app.post('/generate-order-pdf', async (req, res) => {
+  try {
+    const payload = req.body;
+    if (!payload.orderNumber || !payload.clientName) {
+      return res.status(400).json({ error: 'Données de commande manquantes (orderNumber, clientName requis)' });
+    }
+
+    // Le payload contient déjà toutes les données de pdfData (y compris le mapping correct)
+    const pdfData = payload;
+
+    const pdfBuffer = await generateOrderPdf(pdfData);
+
+    // Envoie le PDF Buffer pour l'affichage côté client
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename=Commande-${payload.orderNumber}.pdf`);
+    return res.send(pdfBuffer);
+
+  } catch (err) {
+    console.error('Erreur /generate-order-pdf', err);
+    return res.status(500).json({ error: String(err) });
+  }
+});
 
 // --- POST : envoyer le PDF par mail ---
 app.post('/send-order-pdf', async (req, res) => {
@@ -32,11 +65,12 @@ app.post('/send-order-pdf', async (req, res) => {
       clientCode: clientData.code_postal,
       clientVille: clientData.ville,
       orderNumber: payload.orderNumber,
+      // CORRECTION DU MAPPING : on s'assure que les clés correspondent à l'interface OrderItem dans pdf.ts
       cart: payload.cart.map((item: any) => ({
-        reference: item.code,
+        reference: item.code, // Mappe 'code' à 'reference'
         designation: item.designation,
-        internalRef: item.internalRef || '',
-        qty: item.quantite,
+        internalRef: item.internalRef || '', // Ajouté pour correspondre à l'interface
+        qty: item.quantite, // Mappe 'quantite' à 'qty'
       })),
       comment: payload.comment || '',
     };

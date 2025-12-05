@@ -32,7 +32,7 @@ export default function QrScanner({ onScan }: { onScan: (data: string) => void }
     };
   }, []);
 
-  return (
+  return ( 
     <div style={{ display: "flex", justifyContent: "center" }}>
       <video ref={videoRef} style={{ width: "100%", maxWidth: 400 }} autoPlay />
     </div>

@@ -5,6 +5,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import supabase from "../../lib/supabase";
+import Toast from "react-native-toast-message"; // Assurez-vous que cet import est là
 
 export default function CartScreen() {
   const { cart, removeFromCart, clearCart, updateQuantity, addToCart } = useCart();
@@ -25,19 +26,52 @@ export default function CartScreen() {
   const [selectOrderModalVisible, setSelectOrderModalVisible] = useState(false);
   const [previousOrders, setPreviousOrders] = useState<any[]>([]);
 
-  // --- Fonctions Panier ---
-  const confirmRemove = (id: string) => {
-    Alert.alert("Supprimer l'article", "Voulez-vous vraiment supprimer cet article du panier ?", [
-      { text: "Annuler", style: "cancel" },
-      { text: "Supprimer", style: "destructive", onPress: () => removeFromCart(id) },
-    ]);
+  // États pour le modal de confirmation personnalisé (remplace Alert.alert)
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+
+
+  // Ouvre le modal de confirmation personnalisé
+  const openConfirmModal = (title: string, message: string, action: () => void) => {
+    setConfirmTitle(title);
+    setConfirmMessage(message);
+    // Stocke l'action à exécuter (removeFromCart ou clearCart)
+    setConfirmAction(() => action); 
+    setConfirmModalVisible(true);
   };
 
-  const confirmClearCart = () => {
-    Alert.alert("Vider le panier", "Voulez-vous vraiment supprimer tous les articles ?", [
-      { text: "Annuler", style: "cancel" },
-      { text: "Vider", style: "destructive", onPress: clearCart },
-    ]);
+  // Gère l'action de confirmation
+  const handleConfirm = () => {
+    if (confirmAction) {
+        confirmAction();
+    }
+    setConfirmModalVisible(false);
+    setConfirmAction(null);
+  };
+
+  // Gère l'annulation de la confirmation
+  const handleCancelConfirm = () => {
+    setConfirmModalVisible(false);
+    setConfirmAction(null);
+  };
+
+  // --- Fonctions Panier ---
+  const handleRemove = (id: string) => {
+    openConfirmModal(
+      "Supprimer l'article",
+      "Voulez-vous vraiment supprimer cet article du panier ?",
+      () => removeFromCart(id)
+    );
+  };
+
+  const handleClearCart = () => {
+    openConfirmModal(
+      "Vider le panier",
+      "Voulez-vous vraiment supprimer tous les articles ?",
+      clearCart
+    );
   };
 
   const openEditModal = (item: any) => {
@@ -46,15 +80,22 @@ export default function CartScreen() {
     setModalVisible(true);
   };
 
+  // MODIFIÉ: Utilise Toast.show au lieu de Alert.alert
   const handleSaveQuantity = () => {
     const q = parseInt(newQuantity, 10);
-    if (isNaN(q) || q <= 0) return Alert.alert("Quantité invalide");
+    if (isNaN(q) || q <= 0) {
+        Toast.show({ type: "error", text1: "Quantité invalide" });
+        return;
+    }
     updateQuantity(selectedItem.id, q);
     setModalVisible(false);
   };
 
   const handleOpenCheckout = () => {
-    if (cart.length === 0) return Alert.alert("Votre panier est vide");
+    if (cart.length === 0) {
+        Toast.show({ type: "error", text1: "Votre panier est vide" });
+        return;
+    }
     setCheckoutModalVisible(true);
   };
 
@@ -75,18 +116,22 @@ export default function CartScreen() {
     setPreviousOrders(data || []);
   };
 
+  // MODIFIÉ: Logique de soumission avec Toast.show et gestion plus claire des erreurs.
   const handleCheckout = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     if (!firstName || !lastName || !orderNumber) {
-      Alert.alert("Tous les champs obligatoires doivent être remplis");
+      Toast.show({ type: "error", text1: "Champs obligatoires", text2: "Veuillez remplir Prénom, Nom et Numéro de commande." });
       setIsSubmitting(false);
       return;
     }
 
     try {
-      const response = await fetch("https://cardiovascular-pitchier-duke.ngrok-free.dev/send-order-pdf", {
+      // L'URL de base Ngrok est stockée dans le fichier .env
+      const ngrokBaseUrl = "https://cardiovascular-pitchier-duke.ngrok-free.dev"; 
+      
+      const response = await fetch(`${ngrokBaseUrl}/send-order-pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -100,8 +145,13 @@ export default function CartScreen() {
         }),
       });
 
-      if (!response.ok) throw new Error("Erreur envoi PDF");
+      if (!response.ok) {
+        const errorText = await response.text();
+        // Lance une erreur plus descriptive en cas de réponse non OK du serveur
+        throw new Error(`Erreur serveur (${response.status}): ${errorText}`); 
+      }
 
+      // 1. Enregistrement de la commande dans Supabase
       await supabase.from("orders").insert([{
         client_id: client?.codeClient,
         first_name: firstName,
@@ -119,21 +169,23 @@ export default function CartScreen() {
         created_at: new Date().toISOString(),
       }]);
 
+      // 2. Succès
       clearCart();
       setCheckoutModalVisible(false);
-      Alert.alert("✅ Commande validée", "Elle a été enregistrée et envoyée.");
+      Toast.show({ type: "success", text1: "Commande validée ✅", text2: "Elle a été enregistrée et envoyée." });
 
-      // --- Important : recharger les commandes précédentes ---
+      // 3. Rechargement des commandes
       await loadPreviousOrders();
 
     } catch (e) {
-      console.error(e);
-      Alert.alert("Erreur", "Impossible de valider la commande.");
+      console.error("❌ Erreur validation commande:", e);
+      Toast.show({ type: "error", text1: "Erreur", text2: `Impossible de valider la commande. Vérifiez que votre serveur Express (Ngrok) est bien lancé.` });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // MODIFIÉ: Utilise Toast.show au lieu de Alert.alert
   const restoreOrder = (order: any) => {
     clearCart();
     order.items.products.forEach((p: any) =>
@@ -151,7 +203,7 @@ export default function CartScreen() {
     setComment("");
     
     setSelectOrderModalVisible(false);
-    Alert.alert("✅ Panier mis à jour", "Commande rechargée !");
+    Toast.show({ type: "info", text1: "Panier mis à jour ✅", text2: "Commande rechargée !" });
   };
 
   useEffect(() => {
@@ -162,7 +214,7 @@ export default function CartScreen() {
     <View style={styles.container}>
 
       {cart.length > 0 && (
-        <TouchableOpacity style={styles.clearButton} onPress={confirmClearCart}>
+        <TouchableOpacity style={styles.clearButton} onPress={handleClearCart}>
           <MaterialIcons name="delete-outline" size={20} color="#fff" />
         </TouchableOpacity>
       )}
@@ -180,7 +232,8 @@ export default function CartScreen() {
               <Text style={styles.title}>{item.designation}</Text>
               <Text style={styles.subtitle}>Réf : {item.code}</Text>
               <Text style={styles.subtitle}>Quantité : {item.quantite}</Text>
-              <Text style={styles.remove} onPress={() => confirmRemove(item.id)}>❌ Supprimer</Text>
+              {/* Utilise la nouvelle fonction de suppression */}
+              <Text style={styles.remove} onPress={() => handleRemove(item.id)}>❌ Supprimer</Text>
             </View>
           </TouchableOpacity>
         )}
@@ -192,7 +245,7 @@ export default function CartScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Modal sélection commandes */}
+      {/* Modal sélection commandes (inchangé) */}
       <Modal visible={selectOrderModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -216,12 +269,14 @@ export default function CartScreen() {
       </Modal>
 
       {cart.length > 0 && (
-        <TouchableOpacity style={styles.checkoutButton} onPress={handleOpenCheckout}>
-          <Text style={styles.checkoutText}>Valider la commande</Text>
+        <TouchableOpacity style={styles.checkoutButton} onPress={handleOpenCheckout} disabled={isSubmitting}>
+          <Text style={styles.checkoutText}>
+            {isSubmitting ? "Envoi en cours..." : "Valider la commande"}
+          </Text>
         </TouchableOpacity>
       )}
 
-      {/* Modal édition quantité */}
+      {/* Modal édition quantité (modifié pour Toast) */}
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -237,19 +292,40 @@ export default function CartScreen() {
         </View>
       </Modal>
 
-      {/* Modal checkout */}
+      {/* Modal checkout (modifié pour appeler handleCheckout) */}
       <Modal visible={checkoutModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Valider</Text>
-            <TextInput style={styles.input} placeholder="Prénom" value={firstName} placeholderTextColor="#00000063" onChangeText={setFirstName} />
-            <TextInput style={styles.input} placeholder="Nom" value={lastName} placeholderTextColor="#00000063" onChangeText={setLastName} />
-            <TextInput style={styles.input} placeholder="Numéro commande" value={orderNumber} placeholderTextColor="#00000063" onChangeText={setOrderNumber} />
+            <TextInput style={styles.input} placeholder="Prénom (Obligatoire)" value={firstName} placeholderTextColor="#00000063" onChangeText={setFirstName} />
+            <TextInput style={styles.input} placeholder="Nom (Obligatoire)" value={lastName} placeholderTextColor="#00000063" onChangeText={setLastName} />
+            <TextInput style={styles.input} placeholder="Numéro commande (Obligatoire)" value={orderNumber} placeholderTextColor="#00000063" onChangeText={setOrderNumber} />
             <TextInput style={styles.input} placeholder="Commentaire (optionnel)" value={comment} placeholderTextColor="#00000063" onChangeText={setComment} />
-            <TouchableOpacity style={styles.saveButton} onPress={handleCheckout}>
-              <Text style={styles.saveText}>Valider</Text>
+            {/* L'appel à handleCheckout était déjà correct, mais nous ajoutons le disabled */}
+            <TouchableOpacity style={styles.saveButton} onPress={handleCheckout} disabled={isSubmitting}>
+              <Text style={styles.saveText}>{isSubmitting ? "Envoi en cours..." : "Valider"}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setCheckoutModalVisible(false)}>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setCheckoutModalVisible(false)} disabled={isSubmitting}>
+              <Text style={styles.cancelText}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de confirmation générique pour supprimer/vider le panier */}
+      <Modal visible={confirmModalVisible} transparent animationType="fade">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{confirmTitle}</Text>
+            <Text style={styles.confirmMessage}>{confirmMessage}</Text>
+            <TouchableOpacity 
+              // Utilise une couleur rouge pour l'action de suppression/vidage
+              style={[styles.saveButton, { backgroundColor: "#E63946" }]} 
+              onPress={handleConfirm}
+            >
+              <Text style={styles.saveText}>Confirmer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton} onPress={handleCancelConfirm}>
               <Text style={styles.cancelText}>Annuler</Text>
             </TouchableOpacity>
           </View>
@@ -273,6 +349,7 @@ const styles = StyleSheet.create({
   modalContainer: { flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 20 },
   modalContent: { backgroundColor: "#fff", borderRadius: 16, padding: 20 },
   modalTitle: { fontSize: 20, fontWeight: "700", marginBottom: 20 },
+  confirmMessage: { fontSize: 16, color: "#333", marginBottom: 20, textAlign: "center" },
   input: { borderWidth: 1, borderColor: "#CCC", padding: 10, borderRadius: 8, marginBottom: 10 },
   saveButton: { backgroundColor: "#10B981", padding: 12, borderRadius: 8, alignItems: "center", marginTop: 10 },
   saveText: { color: "#fff", fontWeight: "600" },
