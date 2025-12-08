@@ -23,16 +23,16 @@ function RootNavigator() {
     if (!mounted) return;
 
     if (!isLoggedIn) {
-      router.replace("/(auth)/login");
+      router.replace("/(auth)/login" as any);
       return;
     }
 
     if (isAdmin) {
-      router.replace("/(back)");
+      router.replace("/(back)/index" as any);
       return;
     }
 
-    router.replace("/(tabs)");
+    router.replace("/(tabs)/index" as any);
   }, [isLoggedIn, isAdmin, router, mounted]);
 
   return null; // Ce composant ne rend rien
