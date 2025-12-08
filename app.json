@@ -4,7 +4,7 @@
     "slug": "ETNApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/etn.png",
     "scheme": "etnapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -31,7 +31,12 @@
       "favicon": "./assets/images/favicon.png",
       "display": "standalone", 
       "name": "ETNApp",
-      "shortName": "ETN"
+      "shortName": "ETN",
+      "splash": {
+        "image": "./assets/etn.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      }
     },
     "plugins": [
       "expo-router",

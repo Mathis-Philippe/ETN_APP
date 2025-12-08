@@ -14,6 +14,7 @@ export default function BackLayout() {
 
   return (
     <Tabs
+      initialRouteName="commandes"
       screenOptions={{
         tabBarActiveTintColor: "#1e90ff",
         tabBarInactiveTintColor: "#aaa",

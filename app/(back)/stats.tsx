@@ -48,7 +48,7 @@ export default function StatsBack() {
       if (type === "day") key = date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
       else if (type === "week") {
         const week = Math.ceil(((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(date.getFullYear(), 0, 1).getDay() + 1) / 7);
-        key = `Semaine ${week} ${date.getFullYear()}`;
+        key = `${week} ${date.getFullYear()}`;
       } else if (type === "month") {
         key = `${date.toLocaleString("fr-FR", { month: "short" })} ${date.getFullYear()}`;
       }
