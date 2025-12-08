@@ -50,7 +50,7 @@ export default function BackLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="commandes"
         options={{
           title: "Commandes",
           tabBarIcon: ({ color, size }) => (
