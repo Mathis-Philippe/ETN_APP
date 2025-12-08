@@ -4,7 +4,7 @@
     "slug": "ETNApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/etn.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "etnapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -32,10 +32,17 @@
       "display": "standalone", 
       "name": "ETNApp",
       "shortName": "ETN",
+      "themeColor": "#4A90E2",
       "splash": {
-        "image": "./assets/etn.png",
+        "image": "./assets/images/splash-icon.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
+      },
+    "meta": {
+        "apple": {
+          "mobileWebAppCapable": "yes",
+          "mobileWebAppStatusBarStyle": "black-translucent"
+        }
       }
     },
     "plugins": [
