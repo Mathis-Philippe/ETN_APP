@@ -6,21 +6,21 @@ import { Stack, useRouter } from "expo-router";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
 import Toast from "react-native-toast-message";
-import Head from 'expo-router/head'; // Import important
+import Head from 'expo-router/head';
 
 // Composant client pour gérer les redirections après le montage
 function RootNavigator() {
-  const { isLoggedIn, isAdmin } = useAuth();
+  const { isLoggedIn, isAdmin, isLoading } = useAuth(); // <--- On récupère isLoading
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
-  // On attend que le layout soit monté
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    // Si l'app n'est pas montée OU qu'on charge encore la session, on attend
+    if (!mounted || isLoading) return;
 
     if (!isLoggedIn) {
       router.replace("/(auth)/login" as any);
@@ -33,9 +33,12 @@ function RootNavigator() {
     }
 
     router.replace("/(tabs)" as any);
-  }, [isLoggedIn, isAdmin, router, mounted]);
+  }, [isLoggedIn, isAdmin, router, mounted, isLoading]); // <--- isLoading ajouté aux dépendances
 
-  return null; // Ce composant ne rend rien
+  // Optionnel : Retourner null (écran vide) tant que ça charge évite le "flash"
+  if (isLoading) return null; 
+
+  return null;
 }
 
 export default function RootLayout() {
@@ -48,15 +51,11 @@ export default function RootLayout() {
           <meta name="description" content="Application ETN" />
           <meta name="theme-color" content="#4A90E2" />
           
-          {/* Pour iOS : On couvre les deux cas (standard et precomposed) */}
           <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
           <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png" />
           
-          {/* Pour Android / Chrome */}
           <link rel="icon" type="image/png" sizes="32x32" href="/icon-app.png" />
           <link rel="icon" type="image/png" sizes="192x192" href="/icon-app.png" />
-          
-          {/* Correction du Favicon 404 : Assurez-vous d'avoir copié favicon.png dans public/ */}
           <link rel="shortcut icon" href="/icon-app.png" />
           
           <link rel="manifest" href="/manifest.json" />
