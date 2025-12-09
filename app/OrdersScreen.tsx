@@ -150,7 +150,7 @@ const OrdersScreen: React.FC = () => {
 export default OrdersScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC", paddingTop: 100 },
+  container: { flex: 1, backgroundColor: "#F8FAFC", paddingTop: 50 },
   header: { flexDirection: "row", alignItems: "center", marginBottom: 20, paddingHorizontal: 20 },
   backButton: { marginRight: 12 },
   title: { fontSize: 28, fontWeight: "700", color: "#1E293B" },

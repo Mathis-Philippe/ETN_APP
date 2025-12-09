@@ -28,13 +28,14 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./public/icon.png",
       "display": "standalone", 
       "name": "ETNApp",
       "shortName": "ETN",
       "themeColor": "#4A90E2",
+      "backgroundColor": "#ffffff",
       "splash": {
-        "image": "./assets/images/splash-icon.png",
+        "image": "./assets/images/icon.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       },

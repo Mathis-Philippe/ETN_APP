@@ -1,11 +1,24 @@
 {
   "short_name": "ETN",
-  "name": "ETNApp",
+  "name": "ETN App",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon-app.png",
       "type": "image/png",
-      "sizes": "1024x1024"
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-app.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-app.png",
+      "type": "image/png",
+      "sizes": "1024x1024",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "/",
