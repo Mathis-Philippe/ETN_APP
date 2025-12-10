@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Modal,
   Platform,
+  Dimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import supabase from "../../lib/supabase";
@@ -15,6 +16,96 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import { LinearGradient } from "expo-linear-gradient";
 
+// --- CONSTANTES DE DIMENSIONNEMENT ---
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const MARGIN_HORIZONTAL = 20; // 20px de chaque côté
+// La largeur réelle disponible pour le PDF (Écran - Marges gauche/droite)
+const CONTAINER_WIDTH = SCREEN_WIDTH - (MARGIN_HORIZONTAL * 2);
+// On force le ratio A4 (Hauteur = Largeur * √2) pour que le cadre colle au PDF
+const CONTAINER_HEIGHT = CONTAINER_WIDTH * 1.414; 
+
+// Dimensions standard A4 en pixels (72 PPI) pour le calcul Web
+const A4_WIDTH_PX = 595;
+const A4_HEIGHT_PX = 842;
+
+// --- COMPOSANT CROSS-PLATFORM ---
+const CrossPlatformWebView = ({ uri }: { uri: string }) => {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Calcul du facteur de zoom pour le WEB
+  // On veut que le PDF de 595px rentre dans notre conteneur (CONTAINER_WIDTH)
+  const scaleFactor = CONTAINER_WIDTH / A4_WIDTH_PX;
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      const fetchPdf = async () => {
+        try {
+          const response = await fetch(uri, {
+            headers: { "ngrok-skip-browser-warning": "true" },
+          });
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          setBlobUrl(url);
+        } catch (error) {
+          console.error("Erreur chargement PDF web:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchPdf();
+    }
+  }, [uri]);
+
+  if (Platform.OS === "web") {
+    if (loading) {
+      return (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+        </View>
+      );
+    }
+
+    return (
+      <View style={{ width: CONTAINER_WIDTH, height: CONTAINER_HEIGHT, overflow: 'hidden', backgroundColor: 'white' }}>
+        <iframe
+          src={blobUrl || ""}
+          style={{
+            width: `${A4_WIDTH_PX}px`,
+            height: `${A4_HEIGHT_PX}px`,
+            border: "none",
+            // Transformation CSS pour réduire le PDF pile à la taille du conteneur
+            transform: `scale(${scaleFactor})`,
+            transformOrigin: "top left",
+          }}
+          title="Bon de commande"
+        />
+      </View>
+    );
+  }
+
+  // Version Mobile Native
+  return (
+    <WebView
+      source={{
+        uri,
+        headers: { "ngrok-skip-browser-warning": "true" },
+      }}
+      style={{ flex: 1, backgroundColor: 'transparent' }}
+      scalesPageToFit={true} // iOS
+      useWideViewPort={true} // Android
+      loadWithOverviewMode={true} // Android
+      startInLoadingState
+      renderLoading={() => (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+        </View>
+      )}
+    />
+  );
+};
+
+// --- TYPES ---
 type OrderItem = {
   code: string;
   designation: string;
@@ -35,38 +126,15 @@ type Order = {
   created_at: string;
 };
 
-// Composant cross-platform pour WebView / iframe
-const CrossPlatformWebView = ({ uri }: { uri: string }) => {
-  if (Platform.OS === "web") {
-    return (
-      <iframe
-        src={uri}
-        style={{ width: "100%", height: "100%", border: "none" }}
-      />
-    );
-  }
-
-  return (
-    <WebView
-      source={{ uri }}
-      style={{ flex: 1 }}
-      startInLoadingState
-      renderLoading={() => (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color="#4A90E2" />
-          <Text>Chargement du PDF...</Text>
-        </View>
-      )}
-    />
-  );
-};
-
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [pdfVisible, setPdfVisible] = useState(false);
+
+  // Mettez votre URL Ngrok actuelle ici
+  const API_URL = "https://cardiovascular-pitchier-duke.ngrok-free.dev";
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -109,9 +177,7 @@ export default function OrderDetailScreen() {
     );
   }
 
-  const pdfUrl = `http://localhost:3001/pdf-proxy/${order.order_number}`;
-
-
+  const pdfUrl = `${API_URL}/pdf-proxy/${order.order_number}`;
 
   return (
     <View style={styles.mainContainer}>
@@ -245,31 +311,31 @@ export default function OrderDetailScreen() {
       </ScrollView>
 
       {/* Modal PDF */}
-      <Modal visible={pdfVisible} animationType="slide">
-        <View style={{ flex: 1 }}>
-          <LinearGradient
-            colors={['#4A90E2', '#357ABD']}
-            style={styles.pdfHeader}
-          >
-            <TouchableOpacity
+      <Modal visible={pdfVisible} animationType="slide" onRequestClose={() => setPdfVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
+          
+          {/* Header Modal - Flottant au dessus */}
+          <TouchableOpacity
               onPress={() => setPdfVisible(false)}
-              style={styles.closeButton}
+              style={styles.modalCloseButton}
               activeOpacity={0.7}
             >
-              <MaterialIcons name="close" size={28} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.pdfHeaderTitle}>Bon de commande</Text>
-          </LinearGradient>
+              <MaterialIcons name="close" size={24} color="#fff" />
+              <Text style={styles.modalCloseText}>Fermer</Text>
+          </TouchableOpacity>
 
-          {/* Composant cross-platform */}
-          <CrossPlatformWebView uri={pdfUrl} />
+          {/* Conteneur PDF à taille fixe A4 */}
+          <View style={styles.pdfContainer}>
+            <CrossPlatformWebView uri={pdfUrl} />
+          </View>
+
         </View>
       </Modal>
     </View>
   );
 }
 
-// Styles inchangés
+// Styles
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: "#F1F5F9" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F1F5F9" },
@@ -305,7 +371,35 @@ const styles = StyleSheet.create({
   pdfButton: { marginTop: 8, marginBottom: 20, borderRadius: 16, overflow: "hidden", shadowColor: "#4A90E2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
   pdfButtonGradient: { flexDirection: "row", alignItems: "center", justifyContent: "center", padding: 18 },
   pdfText: { color: "#fff", fontWeight: "700", fontSize: 17, marginLeft: 12 },
-  pdfHeader: { height: 100, flexDirection: "row", alignItems: "center", paddingTop: 50, paddingHorizontal: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 4 },
-  closeButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255, 255, 255, 0.2)", justifyContent: "center", alignItems: "center" },
-  pdfHeaderTitle: { color: "#fff", fontSize: 20, fontWeight: "700", marginLeft: 16 },
+  
+  // Nouveaux styles pour le Modal "Clean"
+  modalCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  modalCloseText: {
+    color: '#fff',
+    marginLeft: 8,
+    fontWeight: '600',
+  },
+  pdfContainer: {
+    width: CONTAINER_WIDTH,
+    height: CONTAINER_HEIGHT,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#ffffffff',
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
 });

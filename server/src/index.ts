@@ -26,12 +26,9 @@ app.post('/generate-order-pdf', async (req, res) => {
       return res.status(400).json({ error: 'Données de commande manquantes (orderNumber, clientName requis)' });
     }
 
-    // Le payload contient déjà toutes les données de pdfData (y compris le mapping correct)
     const pdfData = payload;
-
     const pdfBuffer = await generateOrderPdf(pdfData);
 
-    // Envoie le PDF Buffer pour l'affichage côté client
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename=Commande-${payload.orderNumber}.pdf`);
     return res.send(pdfBuffer);
@@ -50,7 +47,6 @@ app.post('/send-order-pdf', async (req, res) => {
       return res.status(400).json({ error: 'orderNumber, toEmail et clientCode sont requis' });
     }
 
-    // Récupérer les infos client
     const { data: clientData, error: clientError } = await supabase
       .from('clients')
       .select('nom, adresse, code_postal, ville')
@@ -58,26 +54,23 @@ app.post('/send-order-pdf', async (req, res) => {
       .single();
     if (clientError || !clientData) throw clientError || new Error('Client introuvable');
 
-    // Préparer les données pour le PDF
     const pdfData = {
       clientName: clientData.nom,
       clientAddress: clientData.adresse,
       clientCode: clientData.code_postal,
       clientVille: clientData.ville,
       orderNumber: payload.orderNumber,
-      // CORRECTION DU MAPPING : on s'assure que les clés correspondent à l'interface OrderItem dans pdf.ts
       cart: payload.cart.map((item: any) => ({
-        reference: item.code, // Mappe 'code' à 'reference'
+        reference: item.code,
         designation: item.designation,
-        internalRef: item.internalRef || '', // Ajouté pour correspondre à l'interface
-        qty: item.quantite, // Mappe 'quantite' à 'qty'
+        internalRef: item.internalRef || '',
+        qty: item.quantite,
       })),
       comment: payload.comment || '',
     };
 
     const pdfBuffer = await generateOrderPdf(pdfData);
 
-    // Envoyer le mail
     await sendOrderEmail({
       to: payload.toEmail,
       subject: `Commande #${payload.orderNumber}`,
@@ -101,7 +94,6 @@ app.get("/order-pdf/:orderNumber", async (req, res) => {
   try {
     const orderNumber = req.params.orderNumber as string;
 
-    // 🧾 Récupère la commande
     const { data: order, error } = await supabase
       .from("orders")
       .select("*")
@@ -113,7 +105,6 @@ app.get("/order-pdf/:orderNumber", async (req, res) => {
       return res.status(404).send("Commande non trouvée");
     }
 
-    // 👤 Récupère les infos client
     const { data: client } = await supabase
       .from("clients")
       .select("nom, adresse, code_postal, ville")
@@ -145,37 +136,52 @@ app.get("/order-pdf/:orderNumber", async (req, res) => {
   }
 });
 
-
+// --- MODIFICATION ICI : On génère le PDF directement au lieu de le fetcher ---
 app.get("/pdf-proxy/:orderNumber", async (req, res) => {
   try {
-    const orderNumber = req.params.orderNumber;
+    // Exactement la même logique que /order-pdf/ : on génère localement.
+    // Plus besoin de fetch vers ngrok, plus d'erreur SSL !
+    const orderNumber = req.params.orderNumber as string;
 
-    // URL ngrok existante
-    const ngrokUrl = `${process.env.NGROK_BASE_URL}/order-pdf/${orderNumber}`;
+    const { data: order, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("order_number", orderNumber)
+      .single();
 
-    // On fait un fetch vers ngrok en ajoutant le header
-    const response = await fetch(ngrokUrl, {
-      headers: {
-        "ngrok-skip-browser-warning": "true",
-      },
-    });
-
-    if (!response.ok) {
-      return res.status(response.status).send("Erreur lors de la récupération du PDF");
+    if (error || !order) {
+      return res.status(404).send("Commande non trouvée");
     }
 
-    const buffer = await response.arrayBuffer();
+    const { data: client } = await supabase
+      .from("clients")
+      .select("nom, adresse, code_postal, ville")
+      .eq("code_client", order.client_id)
+      .single();
 
-    // On renvoie le PDF directement
+    const pdfBuffer = await generateOrderPdf({
+      clientName: client?.nom || "",
+      clientAddress: client?.adresse || "",
+      clientCode: client?.code_postal || "",
+      clientVille: client?.ville || "",
+      orderNumber,
+      cart: order.items.products.map((p: any) => ({
+        reference: p.code,
+        designation: p.designation,
+        qty: p.quantity,
+      })),
+    });
+
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
       `inline; filename="Commande-${orderNumber}.pdf"`
     );
-    res.send(Buffer.from(buffer));
+    res.send(Buffer.from(pdfBuffer));
+    
   } catch (err) {
     console.error("Erreur /pdf-proxy/:orderNumber", err);
-    res.status(500).send("Erreur serveur lors de la récupération du PDF");
+    res.status(500).send("Erreur serveur lors de la génération du PDF");
   }
 });
 
