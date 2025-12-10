@@ -133,8 +133,7 @@ export default function OrderDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [pdfVisible, setPdfVisible] = useState(false);
 
-  // Mettez votre URL Ngrok actuelle ici
-  const API_URL = "https://cardiovascular-pitchier-duke.ngrok-free.dev";
+  const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://etn-app.onrender.com";
 
   useEffect(() => {
     const fetchOrder = async () => {

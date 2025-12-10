@@ -129,9 +129,9 @@ export default function CartScreen() {
 
     try {
       // L'URL de base Ngrok est stockée dans le fichier .env
-      const ngrokBaseUrl = "https://cardiovascular-pitchier-duke.ngrok-free.dev"; 
+      const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://etn-app.onrender.com";
       
-      const response = await fetch(`${ngrokBaseUrl}/send-order-pdf`, {
+      const response = await fetch(`${API_URL}/send-order-pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
