@@ -2,9 +2,9 @@ import express from 'express';
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import { sendOrderEmail } from './mail';
-import { generateOrderPdf } from './pdf';
-import supabase from './supabaseClient';
+import { sendOrderEmail } from './mail.js';
+import { generateOrderPdf } from './pdf.js';
+import supabase from './supabaseClient.js';
 
 dotenv.config();
 const app = express();
