@@ -9,14 +9,20 @@ export default function Root({ children }: PropsWithChildren) {
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        
+        {/* --- MODIFICATION ICI --- */}
+        {/* On bloque le zoom utilisateur et le scale automatique pour un feeling "App Native" */}
+        <meta 
+          name="viewport" 
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no" 
+        />
+        {/* ------------------------ */}
 
         {/* --- DÉBUT CONFIGURATION PWA --- */}
         {/* Indispensable pour iOS : Lien direct statique */}
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         
         <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png" />
-
 
         <link rel="icon" type="image/png" sizes="32x32" href="/icon-app.png" />
         <link rel="manifest" href="/manifest.json" />
