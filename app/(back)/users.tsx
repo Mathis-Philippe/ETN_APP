@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import supabase from "../../lib/supabase";
 import { LineChart } from "react-native-chart-kit";
+import { MaterialIcons } from "@expo/vector-icons"; // Ajout
 
 const screenWidth = Dimensions.get("window").width - 40;
 
@@ -25,6 +26,9 @@ export default function UsersBack() {
   const [selectedUserName, setSelectedUserName] = useState("");
   const [sortOption, setSortOption] = useState<"recent" | "alphabet" | "mostActive">("recent");
   const [dropdownVisible, setDropdownVisible] = useState(false);
+
+  // --- NOUVEAU : Pagination graph connexions ---
+  const [chartPage, setChartPage] = useState(0);
 
   // ---------------- Fetch utilisateurs et logins ----------------
   useEffect(() => {
@@ -67,31 +71,37 @@ export default function UsersBack() {
     return 0;
   });
 
-  // ---------------- Statistiques ----------------
+  // ---------------- Statistiques (Pagination) ----------------
   const activeUsersByDay: Record<string, number> = {};
 
   loginData.forEach((login) => {
-    // On utilise la colonne `date` si elle existe
     const loginDate = login.date ? new Date(login.date) : new Date(login.created_at);
     if (isNaN(loginDate.getTime())) return;
-
-    // Format JJ/MM
     const dayMonth = loginDate.toLocaleDateString("fr-FR", {
       day: "2-digit",
       month: "2-digit",
     });
-
     activeUsersByDay[dayMonth] = (activeUsersByDay[dayMonth] || 0) + 1;
   });
 
-  // Trier les dates du plus ancien au plus récent
-  const dates = Object.keys(activeUsersByDay).sort((a, b) => {
+  const allDates = Object.keys(activeUsersByDay).sort((a, b) => {
     const [dayA, monthA] = a.split("/").map(Number);
     const [dayB, monthB] = b.split("/").map(Number);
+    // Année fictive pour trier les jours/mois correctement
     return new Date(2025, monthA - 1, dayA).getTime() - new Date(2025, monthB - 1, dayB).getTime();
   });
+  const allCounts = allDates.map((d) => activeUsersByDay[d]);
 
-  const activeCounts = dates.map((d) => activeUsersByDay[d]);
+  // Logique de limite (7 items)
+  const LIMIT = 7;
+  const endIndex = allDates.length - (chartPage * LIMIT);
+  const startIndex = Math.max(0, endIndex - LIMIT);
+
+  const visibleDates = allDates.slice(startIndex, endIndex);
+  const visibleCounts = allCounts.slice(startIndex, endIndex);
+
+  const canGoOlder = startIndex > 0;
+  const canGoNewer = chartPage > 0;
 
   // ---------------- View commandes utilisateur ----------------
   const viewUserOrders = async (user: any) => {
@@ -180,19 +190,44 @@ export default function UsersBack() {
               )}
             </View>
 
-            {/* Statistiques */}
+            {/* Statistiques avec Navigation */}
             <Text style={styles.subtitle}>📊 Connexions récentes</Text>
             <View style={styles.chartCard}>
-              {dates.length > 0 ? (
+                {/* Header Navigation */}
+                <View style={styles.chartHeader}>
+                    <TouchableOpacity 
+                        disabled={!canGoOlder} 
+                        onPress={() => setChartPage(p => p + 1)}
+                        style={{ padding: 5, opacity: canGoOlder ? 1 : 0.3 }}
+                    >
+                        <MaterialIcons name="chevron-left" size={28} color="#4A90E2" />
+                    </TouchableOpacity>
+                    
+                    <Text style={{fontSize: 12, color: '#666'}}>
+                        {visibleDates.length > 0 ? `${visibleDates[0]} - ${visibleDates[visibleDates.length - 1]}` : ""}
+                    </Text>
+
+                    <TouchableOpacity 
+                        disabled={!canGoNewer} 
+                        onPress={() => setChartPage(p => p - 1)}
+                        style={{ padding: 5, opacity: canGoNewer ? 1 : 0.3 }}
+                    >
+                        <MaterialIcons name="chevron-right" size={28} color="#4A90E2" />
+                    </TouchableOpacity>
+                </View>
+
+              {visibleDates.length > 0 ? (
                 <LineChart
                   data={{
-                    labels: dates,
-                    datasets: [{ data: activeCounts }],
+                    labels: visibleDates,
+                    datasets: [{ data: visibleCounts }],
                   }}
                   width={screenWidth - 40}
                   height={200}
                   chartConfig={chartConfig}
                   style={{ borderRadius: 10 }}
+                  fromZero
+                  segments={Math.max(...visibleCounts) < 5 ? Math.max(...visibleCounts) : 4}
                 />
               ) : (
                 <Text style={{ textAlign: "center", padding: 20 }}>Aucune connexion enregistrée</Text>
@@ -228,7 +263,7 @@ export default function UsersBack() {
         contentContainerStyle={{ padding: 20 }}
       />
 
-      {/* Modal commandes utilisateur */}
+      {/* Modal commandes utilisateur (inchangé) */}
       {modalVisible && (
         <Modal visible={modalVisible} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
@@ -287,6 +322,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "700", marginBottom: 10 },
   subtitle: { fontSize: 18, fontWeight: "600", marginVertical: 10 },
   chartCard: { backgroundColor: "#fff", padding: 15, borderRadius: 10, marginBottom: 20, shadowOpacity: 0.1, shadowRadius: 5 },
+  chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   userCard: { backgroundColor: "#fff", padding: 15, borderRadius: 10, marginBottom: 10, shadowOpacity: 0.1, shadowRadius: 3 },
   bold: { fontWeight: "700", marginBottom: 5 },
   actions: { flexDirection: "row", marginTop: 10 },
