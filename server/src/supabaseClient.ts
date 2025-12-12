@@ -1,8 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
+import dotenv from 'dotenv';
+dotenv.config();
 
-const SUPABASE_URL = "https://wjblfsrgavyqkcakkwdr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqYmxmc3JnYXZ5cWtjYWtrd2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MzA2MTIsImV4cCI6MjA3NDIwNjYxMn0.uKc7_juDl-GHT5J11yZ4umj2yCbbe9VUKA0hExNouhQ"; // ta clé anon publique
+// Utilisation des variables d'environnement définies sur Render
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ""; 
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("⚠️ Supabase URL ou Key manquante sur le serveur !");
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export default supabase;

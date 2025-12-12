@@ -73,8 +73,8 @@ app.post('/send-order-pdf', async (req, res) => {
 
     await sendOrderEmail({
       to: payload.toEmail,
-      subject: `Commande #${payload.orderNumber}`,
-      text: `Bonjour ${clientData.nom},\n\nVeuillez trouver votre bon de commande en pièce jointe.`,
+      subject: `Nouvelle Commande #${payload.orderNumber} - ${clientData.nom}`,
+      text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par le client ${clientData.nom}.\n\nVous trouverez le bon de commande en pièce jointe pour traitement.`,
       attachments: [
         {
           filename: `Commande-${payload.orderNumber}.pdf`,
