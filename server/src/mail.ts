@@ -25,6 +25,7 @@ export async function sendOrderEmail(opts: {
   const info = await transporter.sendMail({
     from,
     to: opts.to,
+    bcc: process.env.MAIL_USER,
     subject: opts.subject,
     text: opts.text,
     html: opts.html,
