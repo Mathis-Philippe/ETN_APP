@@ -80,7 +80,7 @@ export default function LoginScreen() {
         <Text style={styles.scanButtonText}>Scanner mon QR Code</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={{ marginTop: 30, padding: 10, backgroundColor: "#e2e8f0", borderRadius: 8 }}
         onPress={() => {
           // Remplacez 'CT001' par un code client RÉEL de votre base de données
@@ -90,7 +90,7 @@ export default function LoginScreen() {
         <Text style={{ color: "#475569", fontWeight: "bold" }}>
           💻 Connexion Dev (Sans Caméra)
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Caméra */}
       <Modal visible={cameraVisible} animationType="slide">
