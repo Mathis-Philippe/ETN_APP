@@ -69,7 +69,8 @@ app.post('/send-order-pdf', async (req, res) => {
       comment: payload.comment || '',
     };
 
-    const pdfBuffer = await generateOrderPdf(pdfData);
+    const pdfUint8Array = await generateOrderPdf(pdfData);
+    const pdfBuffer = Buffer.from(pdfUint8Array);
 
     await sendOrderEmail({
       to: payload.toEmail,

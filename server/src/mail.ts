@@ -1,17 +1,12 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.resend.com', 
-  port: 465,                
-  secure: true,             
-  auth: {
-    user: 'resend',
-    pass: process.env.RESEND_API_KEY 
-  },
-  tls: { rejectUnauthorized: false },
-});
+if (!process.env.RESEND_API_KEY) {
+  throw new Error("RESEND_API_KEY est manquant dans les variables d'environnement");
+}
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendOrderEmail(opts: {
   to: string;
@@ -20,23 +15,28 @@ export async function sendOrderEmail(opts: {
   html?: string;
   attachments?: any[];
 }) {
-const from = 'onboarding@resend.dev'; 
-  
-  console.log(`Tentative d'envoi à ${opts.to} via Resend...`);
+  console.log(`Tentative d'envoi à ${opts.to} via Resend API...`);
 
   try {
-    const info = await transporter.sendMail({
-      from,
-      to: opts.to,
+
+    const data = await resend.emails.send({
+      from: 'ETN <onboarding@resend.dev>',
+      to: [opts.to],
       subject: opts.subject,
-      text: opts.text,
+      text: opts.text || '',
       html: opts.html,
       attachments: opts.attachments,
     });
-    console.log('Email envoyé avec succès:', info.messageId);
-    return info;
+
+    if (data.error) {
+      console.error("Erreur retournée par Resend:", data.error);
+      throw data.error;
+    }
+
+    console.log('Email envoyé avec succès, ID:', data.data?.id);
+    return data;
   } catch (error) {
-    console.error("ERREUR CRITIQUE ENVOI MAIL:", error);
+    console.error("ERREUR CRITIQUE ENVOI MAIL (API):", error);
     throw error;
   }
 }
