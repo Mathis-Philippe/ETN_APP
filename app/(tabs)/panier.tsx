@@ -138,7 +138,7 @@ export default function CartScreen() {
           firstName,
           lastName,
           orderNumber,
-          toEmail: "ton-email@gmail.com",
+          toEmail: "mathis.philippe2005@gmail.com",
           cart,
           comment,
           clientCode: client?.codeClient,
