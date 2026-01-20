@@ -15,17 +15,20 @@ const companyEmail = "etn@equipement-technique-du-nord.fr";
 
 export async function generateOrderPdf(data: {
   clientName: string;
+  clientContact?: string; // AJOUT : Nom du contact (Prénom Nom)
   clientAddress: string;
   clientCode: string;
   clientVille: string;
   orderNumber: string;
   cart: CartItem[];
+  comment?: string; // AJOUT : Commentaire
 }): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   let page = doc.addPage([595, 842]);
   const { width, height } = page.getSize();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const fontItalic = await doc.embedFont(StandardFonts.HelveticaOblique);
 
   const primaryColor = rgb(0.1, 0.2, 0.4);
   const accentColor = rgb(0.2, 0.4, 0.7);
@@ -44,7 +47,7 @@ export async function generateOrderPdf(data: {
     color: primaryColor,
   });
 
-  // En-tête entreprise (en blanc sur fond coloré)
+  // En-tête entreprise
   page.drawText(companyName, {
     x: margin,
     y: height - 40,
@@ -111,7 +114,8 @@ export async function generateOrderPdf(data: {
   });
 
   y -= 22;
-  page.drawText(data.clientName, {
+  // 1. Nom Société
+  page.drawText(data.clientName || '', {
     x: margin + 10,
     y,
     size: 11,
@@ -119,8 +123,21 @@ export async function generateOrderPdf(data: {
     color: rgb(0, 0, 0),
   });
 
-  y -= 16;
-  page.drawText(data.clientAddress, {
+  y -= 15;
+  // 2. Nom Contact (Prénom Nom) - AJOUTÉ
+  if (data.clientContact) {
+      page.drawText(`Attn: ${data.clientContact}`, {
+          x: margin + 10,
+          y,
+          size: 10,
+          font: font, 
+          color: rgb(0, 0, 0),
+      });
+      y -= 15;
+  }
+
+  // 3. Adresse
+  page.drawText(data.clientAddress || '', {
     x: margin + 10,
     y,
     size: 10,
@@ -128,8 +145,9 @@ export async function generateOrderPdf(data: {
     color: darkGray,
   });
 
-  y -= 16;
-  page.drawText(`${data.clientCode} - ${data.clientVille}`, {
+  y -= 15;
+  // 4. Code Postal & Ville
+  page.drawText(`${data.clientCode || ''} - ${data.clientVille || ''}`, {
     x: margin + 10,
     y,
     size: 10,
@@ -137,7 +155,37 @@ export async function generateOrderPdf(data: {
     color: darkGray,
   });
 
-  y -= 45;
+  // --- COMMENTAIRE (à droite) ---
+  if (data.comment) {
+      const commentY = clientBoxY + 65; 
+      page.drawText("Commentaire :", {
+          x: width - 250, 
+          y: commentY,
+          size: 10,
+          font: fontBold,
+          color: accentColor,
+      });
+      
+      const safeComment = data.comment.replace(/\n/g, " ");
+      const words = safeComment.split(' ');
+      let line = '';
+      let textY = commentY - 15;
+      
+      for (let word of words) {
+          if ((line + word).length > 40) {
+              page.drawText(line, { x: width - 250, y: textY, size: 10, font: fontItalic, color: darkGray });
+              line = word + ' ';
+              textY -= 12;
+          } else {
+              line += word + ' ';
+          }
+      }
+      if (line) {
+           page.drawText(line, { x: width - 250, y: textY, size: 10, font: fontItalic, color: darkGray });
+      }
+  }
+
+  y = clientBoxY - 45;
 
   // En-tête du tableau
   const tableTop = y;
@@ -175,7 +223,6 @@ export async function generateOrderPdf(data: {
       rowIndex = 0;
     }
 
-    // Alternance de couleur de fond
     if (rowIndex % 2 === 0) {
       page.drawRectangle({
         x: margin,
@@ -229,7 +276,6 @@ export async function generateOrderPdf(data: {
     rowIndex++;
   }
 
-  // Ligne de fin de tableau
   page.drawLine({
     start: { x: margin, y: y + 5 },
     end: { x: width - margin, y: y + 5 },
@@ -237,7 +283,6 @@ export async function generateOrderPdf(data: {
     color: primaryColor,
   });
 
-  // Pied de page
   const footerY = 40;
   page.drawText(`${companyName} - ${companyPhone}`, {
     x: margin,

@@ -11,33 +11,12 @@ const app = express();
 app.use(bodyParser.json({ limit: '1mb' }));
 
 const corsOptions = {
-  // Autorise toutes les origines (pour le développement avec Expo/Ngrok)
   origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   preflightContinue: false,
   optionsSuccessStatus: 204,
 };
 app.use(cors(corsOptions));
-
-app.post('/generate-order-pdf', async (req, res) => {
-  try {
-    const payload = req.body;
-    if (!payload.orderNumber || !payload.clientName) {
-      return res.status(400).json({ error: 'Données de commande manquantes (orderNumber, clientName requis)' });
-    }
-
-    const pdfData = payload;
-    const pdfBuffer = await generateOrderPdf(pdfData);
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename=Commande-${payload.orderNumber}.pdf`);
-    return res.send(pdfBuffer);
-
-  } catch (err) {
-    console.error('Erreur /generate-order-pdf', err);
-    return res.status(500).json({ error: String(err) });
-  }
-});
 
 // --- POST : envoyer le PDF par mail ---
 app.post('/send-order-pdf', async (req, res) => {
@@ -54,8 +33,12 @@ app.post('/send-order-pdf', async (req, res) => {
       .single();
     if (clientError || !clientData) throw clientError || new Error('Client introuvable');
 
+    // AJOUT : Construction du nom complet
+    const contactName = `${payload.firstName || ''} ${payload.lastName || ''}`.trim();
+
     const pdfData = {
       clientName: clientData.nom,
+      clientContact: contactName, // PASSAGE DU CONTACT AU PDF
       clientAddress: clientData.adresse,
       clientCode: clientData.code_postal,
       clientVille: clientData.ville,
@@ -75,7 +58,8 @@ app.post('/send-order-pdf', async (req, res) => {
     await sendOrderEmail({
       to: payload.toEmail,
       subject: `Nouvelle Commande #${payload.orderNumber} - ${clientData.nom}`,
-      text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par le client ${clientData.nom}.\n\nVous trouverez le bon de commande en pièce jointe pour traitement.`,
+      // Ajout du nom du contact dans le corps du mail
+      text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par ${clientData.nom} (Contact : ${contactName}).\n\nVous trouverez le bon de commande en pièce jointe.`,
       attachments: [
         {
           filename: `Commande-${payload.orderNumber}.pdf`,
@@ -91,59 +75,13 @@ app.post('/send-order-pdf', async (req, res) => {
   }
 });
 
-app.get("/order-pdf/:orderNumber", async (req, res) => {
-  try {
-    const orderNumber = req.params.orderNumber as string;
-
-    const { data: order, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("order_number", orderNumber)
-      .single();
-
-    if (error || !order) {
-      console.error("Erreur commande:", error);
-      return res.status(404).send("Commande non trouvée");
-    }
-
-    const { data: client } = await supabase
-      .from("clients")
-      .select("nom, adresse, code_postal, ville")
-      .eq("code_client", order.client_id)
-      .single();
-
-    const pdfBuffer = await generateOrderPdf({
-      clientName: client?.nom || "",
-      clientAddress: client?.adresse || "",
-      clientCode: client?.code_postal || "",
-      clientVille: client?.ville || "",
-      orderNumber,
-      cart: order.items.products.map((p: any) => ({
-        reference: p.code,
-        designation: p.designation,
-        qty: p.quantity,
-      })),
-    });
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `inline; filename="Commande-${orderNumber}.pdf"`
-    );
-    res.send(Buffer.from(pdfBuffer));
-  } catch (err) {
-    console.error("Erreur génération PDF:", err);
-    res.status(500).send("Erreur serveur lors de la génération du PDF");
-  }
-});
-
-// --- MODIFICATION ICI : On génère le PDF directement au lieu de le fetcher ---
+// --- GET : Visualisation PDF (Route utilisée par l'app) ---
 app.get("/pdf-proxy/:orderNumber", async (req, res) => {
   try {
-    // Exactement la même logique que /order-pdf/ : on génère localement.
-    // Plus besoin de fetch vers ngrok, plus d'erreur SSL !
-    const orderNumber = req.params.orderNumber as string;
+    // FIX : On décode pour éviter les erreurs si le numéro contient des espaces (CMD%20123)
+    const orderNumber = decodeURIComponent(req.params.orderNumber as string);
 
+    // On récupère la commande AVEC nom/prénom enregistrés
     const { data: order, error } = await supabase
       .from("orders")
       .select("*")
@@ -151,6 +89,7 @@ app.get("/pdf-proxy/:orderNumber", async (req, res) => {
       .single();
 
     if (error || !order) {
+      console.error("Commande non trouvée pour :", orderNumber);
       return res.status(404).send("Commande non trouvée");
     }
 
@@ -160,12 +99,17 @@ app.get("/pdf-proxy/:orderNumber", async (req, res) => {
       .eq("code_client", order.client_id)
       .single();
 
+    // Reconstitution du contact depuis la commande stockée
+    const contactName = `${order.first_name || ''} ${order.last_name || ''}`.trim();
+
     const pdfBuffer = await generateOrderPdf({
       clientName: client?.nom || "",
+      clientContact: contactName, // AJOUT ICI AUSSI
       clientAddress: client?.adresse || "",
       clientCode: client?.code_postal || "",
       clientVille: client?.ville || "",
-      orderNumber,
+      orderNumber: orderNumber,
+      comment: order.comment || "", // On passe aussi le commentaire stocké
       cart: order.items.products.map((p: any) => ({
         reference: p.code,
         designation: p.designation,
@@ -186,8 +130,38 @@ app.get("/pdf-proxy/:orderNumber", async (req, res) => {
   }
 });
 
+// Route legacy (si utilisée ailleurs) - mise à jour aussi par précaution
+app.get("/order-pdf/:orderNumber", async (req, res) => {
+    // Redirection logique vers la même fonction que proxy
+    // (J'ai dupliqué le code pour éviter de casser si vous utilisez les deux)
+    try {
+      const orderNumber = decodeURIComponent(req.params.orderNumber as string);
+      const { data: order, error } = await supabase.from("orders").select("*").eq("order_number", orderNumber).single();
+  
+      if (error || !order) return res.status(404).send("Commande non trouvée");
+  
+      const { data: client } = await supabase.from("clients").select("nom, adresse, code_postal, ville").eq("code_client", order.client_id).single();
+  
+      const pdfBuffer = await generateOrderPdf({
+        clientName: client?.nom || "",
+        clientContact: `${order.first_name || ''} ${order.last_name || ''}`.trim(),
+        clientAddress: client?.adresse || "",
+        clientCode: client?.code_postal || "",
+        clientVille: client?.ville || "",
+        orderNumber,
+        comment: order.comment || "",
+        cart: order.items.products.map((p: any) => ({ reference: p.code, designation: p.designation, qty: p.quantity })),
+      });
+  
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="Commande-${orderNumber}.pdf"`);
+      res.send(Buffer.from(pdfBuffer));
+    } catch (err) {
+      console.error("Erreur génération PDF:", err);
+      res.status(500).send("Erreur serveur");
+    }
+  });
 
-// 🚀 Lancement du serveur
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${PORT}`);

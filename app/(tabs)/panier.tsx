@@ -26,13 +26,12 @@ export default function CartScreen() {
   const [selectOrderModalVisible, setSelectOrderModalVisible] = useState(false);
   const [previousOrders, setPreviousOrders] = useState<any[]>([]);
 
-  // États pour le modal de confirmation personnalisé
+  // États pour le modal de confirmation
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
   const [confirmTitle, setConfirmTitle] = useState("");
   const [confirmMessage, setConfirmMessage] = useState("");
 
-  // Ouvre le modal de confirmation personnalisé
   const openConfirmModal = (title: string, message: string, action: () => void) => {
     setConfirmTitle(title);
     setConfirmMessage(message);
@@ -40,16 +39,12 @@ export default function CartScreen() {
     setConfirmModalVisible(true);
   };
 
-  // Gère l'action de confirmation
   const handleConfirm = () => {
-    if (confirmAction) {
-        confirmAction();
-    }
+    if (confirmAction) confirmAction();
     setConfirmModalVisible(false);
     setConfirmAction(null);
   };
 
-  // Gère l'annulation de la confirmation
   const handleCancelConfirm = () => {
     setConfirmModalVisible(false);
     setConfirmAction(null);
@@ -57,19 +52,11 @@ export default function CartScreen() {
 
   // --- Fonctions Panier ---
   const handleRemove = (id: string) => {
-    openConfirmModal(
-      "Supprimer l'article",
-      "Voulez-vous vraiment supprimer cet article du panier ?",
-      () => removeFromCart(id)
-    );
+    openConfirmModal("Supprimer l'article", "Voulez-vous vraiment supprimer cet article ?", () => removeFromCart(id));
   };
 
   const handleClearCart = () => {
-    openConfirmModal(
-      "Vider le panier",
-      "Voulez-vous vraiment supprimer tous les articles ?",
-      clearCart
-    );
+    openConfirmModal("Vider le panier", "Voulez-vous vraiment supprimer tous les articles ?", clearCart);
   };
 
   const openEditModal = (item: any) => {
@@ -109,7 +96,6 @@ export default function CartScreen() {
       console.error("Erreur récupération commandes :", error);
       return;
     }
-
     setPreviousOrders(data || []);
   };
 
@@ -118,7 +104,7 @@ export default function CartScreen() {
     setIsSubmitting(true);
 
     if (!firstName || !lastName || !orderNumber) {
-      Toast.show({ type: "error", text1: "Champs obligatoires", text2: "Veuillez remplir Prénom, Nom et Numéro de commande." });
+      Toast.show({ type: "error", text1: "Champs obligatoires", text2: "Prénom, Nom et Numéro requis." });
       setIsSubmitting(false);
       return;
     }
@@ -164,13 +150,12 @@ export default function CartScreen() {
 
       clearCart();
       setCheckoutModalVisible(false);
-      Toast.show({ type: "success", text1: "Commande validée ✅", text2: "Elle a été enregistrée et envoyée." });
-
+      Toast.show({ type: "success", text1: "Commande validée ✅", text2: "Envoyée par email." });
       await loadPreviousOrders();
 
     } catch (e) {
-      console.error("❌ Erreur validation commande:", e);
-      Toast.show({ type: "error", text1: "Erreur", text2: `Impossible de valider la commande.` });
+      console.error("❌ Erreur validation:", e);
+      Toast.show({ type: "error", text1: "Erreur", text2: `Impossible de valider.` });
     } finally {
       setIsSubmitting(false);
     }
@@ -179,21 +164,11 @@ export default function CartScreen() {
   const restoreOrder = (order: any) => {
     clearCart();
     order.items.products.forEach((p: any) =>
-      addToCart({
-        id: p.code,
-        code: p.code,
-        designation: p.designation,
-        quantite: p.quantity,
-      })
+      addToCart({ id: p.code, code: p.code, designation: p.designation, quantite: p.quantity })
     );
-
-    setFirstName("");
-    setLastName("");
-    setOrderNumber("");
-    setComment("");
-    
+    setFirstName(""); setLastName(""); setOrderNumber(""); setComment("");
     setSelectOrderModalVisible(false);
-    Toast.show({ type: "info", text1: "Panier mis à jour ✅", text2: "Commande rechargée !" });
+    Toast.show({ type: "info", text1: "Panier restauré" });
   };
 
   useEffect(() => {
@@ -203,100 +178,103 @@ export default function CartScreen() {
   return (
     <View style={styles.container}>
 
-      {cart.length > 0 && (
+      {/* Header Panier : Titre ou Bouton Vider */}
+      {cart.length > 0 ? (
         <TouchableOpacity style={styles.clearButton} onPress={handleClearCart}>
           <MaterialIcons name="delete-outline" size={20} color="#fff" />
+          <Text style={{color:'#fff', marginLeft:5, fontWeight:'600'}}>Tout supprimer</Text>
         </TouchableOpacity>
+      ) : (
+        <View style={{height: 40}} /> // Spacer
       )}
 
-      {cart.length < 1 && (
-        <Text style={styles.noArticleText}>Aucun article dans le panier</Text>
-      )}
-
-      <FlatList
-        data={cart}
-        keyExtractor={(item) => item.id}
-        ListFooterComponent={() => (
-          <View style={{ marginTop: 20, marginBottom: 10 }}>
-            <TouchableOpacity 
-              style={styles.scanMoreButton} 
-              onPress={() => router.push("/(tabs)")}
-            >
-              <MaterialCommunityIcons name="qrcode-scan" size={20} color="#4A90E2" />
-              <Text style={styles.scanMoreText}>Scanner un autre article</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => openEditModal(item)}>
-            <View style={styles.item}>
-              <Text style={styles.title}>{item.designation}</Text>
-              <Text style={styles.subtitle}>Réf : {item.code}</Text>
-              <Text style={styles.subtitle}>Quantité : {item.quantite}</Text>
-              <Text style={styles.remove} onPress={() => handleRemove(item.id)}>❌ Supprimer</Text>
+      {/* Contenu principal */}
+      <View style={{flex: 1}}>
+          {cart.length < 1 && (
+            <View style={styles.emptyContainer}>
+                <MaterialIcons name="shopping-cart" size={64} color="#DDD" />
+                <Text style={styles.noArticleText}>Votre panier est vide</Text>
             </View>
-          </TouchableOpacity>
-        )}
-      />
+          )}
 
-      {previousOrders.length > 0 && (
-        <TouchableOpacity style={styles.reloadButton} onPress={async () => { await loadPreviousOrders(); setSelectOrderModalVisible(true); }}>
-          <Text style={styles.reloadText}>Recharger une commande précédente</Text>
+          <FlatList
+            data={cart}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: 100 }} // Espace pour les boutons fixes
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => openEditModal(item)}>
+                <View style={styles.item}>
+                  <Text style={styles.title}>{item.designation}</Text>
+                  <Text style={styles.subtitle}>Réf : {item.code}</Text>
+                  <View style={{flexDirection:'row', justifyContent:'space-between', marginTop:5}}>
+                     <Text style={[styles.subtitle, {color:'#4A90E2', fontWeight:'bold'}]}>x {item.quantite}</Text>
+                     <Text style={styles.remove} onPress={() => handleRemove(item.id)}>Supprimer</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+      </View>
+
+      {/* --- ZONE BOUTONS FIXES (BAS DE PAGE) --- */}
+      <View style={styles.footerButtons}>
+        
+        {/* Bouton Scanner (Toujours visible) */}
+        <TouchableOpacity 
+            style={styles.scanMoreButton} 
+            onPress={() => router.push("/(tabs)")}
+        >
+            <MaterialCommunityIcons name="qrcode-scan" size={20} color="#4A90E2" />
+            <Text style={styles.scanMoreText}>Scanner un article</Text>
         </TouchableOpacity>
-      )}
 
-      {/* --- MODAL DE SÉLECTION DE COMMANDE (DESIGN PREMIUM) --- */}
+        {/* Bouton Historique */}
+        {previousOrders.length > 0 && (
+            <TouchableOpacity style={styles.reloadButton} onPress={async () => { await loadPreviousOrders(); setSelectOrderModalVisible(true); }}>
+            <Text style={styles.reloadText}>Historique commandes</Text>
+            </TouchableOpacity>
+        )}
+
+        {/* Bouton Valider (Seulement si articles) */}
+        {cart.length > 0 && (
+            <TouchableOpacity style={styles.checkoutButton} onPress={handleOpenCheckout} disabled={isSubmitting}>
+            <Text style={styles.checkoutText}>
+                {isSubmitting ? "Envoi..." : `Valider (${cart.length} articles)`}
+            </Text>
+            </TouchableOpacity>
+        )}
+      </View>
+
+
+      {/* --- MODAL DE SÉLECTION DE COMMANDE --- */}
       <Modal visible={selectOrderModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainerLarge}>
-            
-            {/* Header de la Modal */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Historique des commandes</Text>
+              <Text style={styles.modalTitle}>Historique</Text>
               <TouchableOpacity onPress={() => setSelectOrderModalVisible(false)} style={styles.closeIconButton}>
                 <MaterialIcons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-
-            <Text style={styles.modalSubtitle}>Sélectionnez une commande pour restaurer son panier.</Text>
+            <Text style={styles.modalSubtitle}>Appuyez pour restaurer un panier.</Text>
 
             <FlatList
               data={previousOrders}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={{ paddingBottom: 20 }}
-              showsVerticalScrollIndicator={false}
               renderItem={({ item }) => {
                 const productCount = item.items?.total_items || item.items?.products?.length || 0;
-                const firstProduct = item.items?.products?.[0]?.designation || "Article inconnu";
-                
                 return (
-                  <TouchableOpacity 
-                    style={styles.orderCard} 
-                    onPress={() => restoreOrder(item)}
-                    activeOpacity={0.7}
-                  >
+                  <TouchableOpacity style={styles.orderCard} onPress={() => restoreOrder(item)}>
                     <View style={styles.orderCardHeader}>
                       <View style={styles.orderNumberContainer}>
-                        <MaterialIcons name="receipt" size={16} color="#4A90E2" />
                         <Text style={styles.orderNumberText}>#{item.order_number}</Text>
                       </View>
                       <Text style={styles.orderDateText}>
-                        {new Date(item.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                        {new Date(item.created_at).toLocaleDateString("fr-FR")}
                       </Text>
                     </View>
-
                     <View style={styles.orderCardBody}>
-                      <Text style={styles.orderInfoText}>
-                        <Text style={{ fontWeight: '600' }}>{productCount}</Text> article{productCount > 1 ? 's' : ''}
-                      </Text>
-                      <Text style={styles.orderPreviewText} numberOfLines={1}>
-                        Dont : {firstProduct} {productCount > 1 ? "..." : ""}
-                      </Text>
-                    </View>
-
-                    <View style={styles.orderCardFooter}>
-                      <Text style={styles.restoreActionText}>Restaurer le panier</Text>
-                      <MaterialIcons name="arrow-forward" size={16} color="#4A90E2" />
+                        <Text style={styles.orderInfoText}>{productCount} article(s)</Text>
                     </View>
                   </TouchableOpacity>
                 );
@@ -306,15 +284,7 @@ export default function CartScreen() {
         </View>
       </Modal>
 
-      {cart.length > 0 && (
-        <TouchableOpacity style={styles.checkoutButton} onPress={handleOpenCheckout} disabled={isSubmitting}>
-          <Text style={styles.checkoutText}>
-            {isSubmitting ? "Envoi en cours..." : "Valider la commande"}
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Modal édition quantité */}
+      {/* Modal Quantité */}
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -330,17 +300,18 @@ export default function CartScreen() {
         </View>
       </Modal>
 
-      {/* Modal checkout */}
+      {/* Modal Checkout */}
       <Modal visible={checkoutModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitleOld}>Valider</Text>
-            <TextInput style={styles.input} placeholder="Prénom (Obligatoire)" value={firstName} placeholderTextColor="#00000063" onChangeText={setFirstName} />
-            <TextInput style={styles.input} placeholder="Nom (Obligatoire)" value={lastName} placeholderTextColor="#00000063" onChangeText={setLastName} />
-            <TextInput style={styles.input} placeholder="Numéro commande (Obligatoire)" value={orderNumber} placeholderTextColor="#00000063" onChangeText={setOrderNumber} />
-            <TextInput style={styles.input} placeholder="Commentaire (optionnel)" value={comment} placeholderTextColor="#00000063" onChangeText={setComment} />
+            <Text style={styles.modalTitleOld}>Validation</Text>
+            <TextInput style={styles.input} placeholder="Prénom" value={firstName} onChangeText={setFirstName} />
+            <TextInput style={styles.input} placeholder="Nom" value={lastName} onChangeText={setLastName} />
+            <TextInput style={styles.input} placeholder="N° Commande" value={orderNumber} onChangeText={setOrderNumber} />
+            <TextInput style={styles.input} placeholder="Commentaire" value={comment} onChangeText={setComment} />
+            
             <TouchableOpacity style={styles.saveButton} onPress={handleCheckout} disabled={isSubmitting}>
-              <Text style={styles.saveText}>{isSubmitting ? "Envoi en cours..." : "Valider"}</Text>
+              <Text style={styles.saveText}>{isSubmitting ? "Envoi..." : "Envoyer commande"}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={() => setCheckoutModalVisible(false)} disabled={isSubmitting}>
               <Text style={styles.cancelText}>Annuler</Text>
@@ -349,16 +320,13 @@ export default function CartScreen() {
         </View>
       </Modal>
 
-      {/* Modal de confirmation générique */}
+      {/* Modal Confirmation */}
       <Modal visible={confirmModalVisible} transparent animationType="fade">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitleOld}>{confirmTitle}</Text>
             <Text style={styles.confirmMessage}>{confirmMessage}</Text>
-            <TouchableOpacity 
-              style={[styles.saveButton, { backgroundColor: "#E63946" }]} 
-              onPress={handleConfirm}
-            >
+            <TouchableOpacity style={[styles.saveButton, { backgroundColor: "#E63946" }]} onPress={handleConfirm}>
               <Text style={styles.saveText}>Confirmer</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancelConfirm}>
@@ -367,158 +335,68 @@ export default function CartScreen() {
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F7F9FC", padding: 20 },
-  clearButton: { backgroundColor: "#dd2828", padding: 8, borderRadius: 20, alignSelf: "flex-end", marginBottom: 10 },
-  item: { backgroundColor: "#fff", padding: 15, borderRadius: 10, marginBottom: 10 },
-  title: { fontSize: 18, fontWeight: "600" },
-  subtitle: { color: "#666" },
-  remove: { color: "#E63946", marginTop: 8 },
-  reloadButton: { padding: 12, backgroundColor: "#E9EDF5", borderRadius: 8, alignItems: "center", marginTop: 10 },
-  reloadText: { color: "#333", fontWeight: "600" },
-  checkoutButton: { backgroundColor: "#4A90E2", padding: 18, borderRadius: 12, alignItems: "center", marginTop: 15 },
-  checkoutText: { color: "#fff", fontSize: 18, fontWeight: "700" },
   
-  // Modals classiques (centrées)
+  // Header buttons
+  clearButton: { flexDirection:'row', backgroundColor: "#E63946", padding: 8, paddingHorizontal:12, borderRadius: 20, alignSelf: "flex-end", marginBottom: 10, alignItems:'center' },
+  
+  // Empty State
+  emptyContainer: { alignItems:'center', justifyContent:'center', marginTop: 100 },
+  noArticleText: { fontSize: 18, color: "#999", marginTop: 10, fontWeight:'500' },
+
+  // List Item
+  item: { backgroundColor: "#fff", padding: 15, borderRadius: 12, marginBottom: 12, shadowColor:'#000', shadowOpacity:0.05, shadowRadius:5, elevation:2 },
+  title: { fontSize: 16, fontWeight: "600", color:'#333' },
+  subtitle: { color: "#666", fontSize:14 },
+  remove: { color: "#E63946", fontWeight:'600', fontSize:14 },
+
+  // Footer Actions (Sticky Bottom)
+  footerButtons: { paddingTop: 10, borderTopWidth:1, borderTopColor:'#eee', backgroundColor:'#F7F9FC' },
+  
+  scanMoreButton: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    padding: 14, backgroundColor: "#fff", borderWidth: 1, borderColor: "#4A90E2", borderRadius: 12, marginBottom: 10,
+  },
+  scanMoreText: { color: "#4A90E2", fontSize: 16, fontWeight: "600", marginLeft: 8 },
+
+  reloadButton: { padding: 14, backgroundColor: "#E9EDF5", borderRadius: 12, alignItems: "center", marginBottom: 10 },
+  reloadText: { color: "#333", fontWeight: "600", fontSize:16 },
+
+  checkoutButton: { backgroundColor: "#4A90E2", padding: 16, borderRadius: 12, alignItems: "center" },
+  checkoutText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+
+  // Modals
   modalContainer: { flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 20 },
   modalContent: { backgroundColor: "#fff", borderRadius: 16, padding: 20 },
-  modalTitleOld: { fontSize: 20, fontWeight: "700", marginBottom: 20 },
+  modalTitleOld: { fontSize: 20, fontWeight: "700", marginBottom: 15, textAlign:'center' },
+  input: { borderWidth: 1, borderColor: "#DDD", padding: 12, borderRadius: 8, marginBottom: 12, fontSize:16, backgroundColor:'#FAFAFA' },
   
-  // MODAL ET CARTES COMMANDES (NOUVEAU DESIGN)
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end", // Bottom sheet effect
-  },
-  modalContainerLarge: {
-    backgroundColor: "#F7F9FC",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    height: "85%", // Prend 85% de la hauteur
-    padding: 20,
-    paddingTop: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#1E293B",
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: "#64748B",
-    marginBottom: 20,
-  },
-  closeIconButton: {
-    padding: 8,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 20,
-  },
+  saveButton: { backgroundColor: "#10B981", padding: 14, borderRadius: 10, alignItems: "center", marginTop: 5 },
+  saveText: { color: "#fff", fontWeight: "700", fontSize:16 },
+  cancelButton: { backgroundColor: "#94A3B8", padding: 14, borderRadius: 10, alignItems: "center", marginTop: 10 },
+  cancelText: { color: "#fff", fontWeight: "700", fontSize:16 },
+  confirmMessage: { fontSize: 16, color: "#555", marginBottom: 20, textAlign: "center" },
 
-  scanMoreButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 15,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#4A90E2",
-    borderRadius: 10,
-    gap: 10,
-  },
-  scanMoreText: {
-    color: "#4A90E2",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  // Style de la CARTE COMMANDE
-  orderCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.03)"
-  },
-  orderCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  orderNumberContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  orderNumberText: {
-    color: "#4A90E2",
-    fontWeight: "700",
-    marginLeft: 6,
-    fontSize: 14,
-  },
-  orderDateText: {
-    color: "#94A3B8",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  orderCardBody: {
-    marginBottom: 12,
-  },
-  orderInfoText: {
-    fontSize: 15,
-    color: "#334155",
-    marginBottom: 4,
-  },
-  orderPreviewText: {
-    fontSize: 13,
-    color: "#94A3B8",
-    fontStyle: "italic",
-  },
-  orderCardFooter: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
-  restoreActionText: {
-    color: "#4A90E2",
-    fontWeight: "600",
-    fontSize: 14,
-    marginRight: 4,
-  },
-
-  // Autres éléments
-  confirmMessage: { fontSize: 16, color: "#333", marginBottom: 20, textAlign: "center" },
-  input: { borderWidth: 1, borderColor: "#CCC", padding: 10, borderRadius: 8, marginBottom: 10 },
-  saveButton: { backgroundColor: "#10B981", padding: 12, borderRadius: 8, alignItems: "center", marginTop: 10 },
-  saveText: { color: "#fff", fontWeight: "600" },
-  cancelButton: { backgroundColor: "#9CA3AF", padding: 12, borderRadius: 8, alignItems: "center", marginTop: 8 },
-  cancelText: { color: "#fff", fontWeight: "600" },
-  noArticleText: { textAlign: "center", fontSize: 16, color: "#666", marginTop: 250 },
+  // Large Modal (Historique)
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalContainerLarge: { backgroundColor: "#F7F9FC", borderTopLeftRadius: 24, borderTopRightRadius: 24, height: "80%", padding: 20 },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  modalTitle: { fontSize: 22, fontWeight: "700", color: "#1E293B" },
+  modalSubtitle: { fontSize: 14, color: "#64748B", marginBottom: 15 },
+  closeIconButton: { padding: 5, backgroundColor: "#E2E8F0", borderRadius: 20 },
+  
+  // Order Card in Modal
+  orderCard: { backgroundColor: "#fff", borderRadius: 12, padding: 15, marginBottom: 10, borderWidth: 1, borderColor: "#eee" },
+  orderCardHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
+  orderNumberContainer: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  orderNumberText: { color: "#4A90E2", fontWeight: "700" },
+  orderDateText: { color: "#94A3B8", fontSize: 12 },
+  orderCardBody: { flexDirection:'row', justifyContent:'space-between', alignItems:'center' },
+  orderInfoText: { fontSize: 14, color: "#333" },
 });
