@@ -126,7 +126,7 @@ export async function generateOrderPdf(data: {
   y -= 15;
   // 2. Nom Contact (Prénom Nom) - AJOUTÉ
   if (data.clientContact) {
-      page.drawText(`Attn: ${data.clientContact}`, {
+      page.drawText(`Client: ${data.clientContact}`, {
           x: margin + 10,
           y,
           size: 10,

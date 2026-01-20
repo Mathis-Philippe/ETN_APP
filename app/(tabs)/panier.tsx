@@ -26,7 +26,7 @@ export default function CartScreen() {
   const [selectOrderModalVisible, setSelectOrderModalVisible] = useState(false);
   const [previousOrders, setPreviousOrders] = useState<any[]>([]);
 
-  // États pour le modal de confirmation
+  // États confirmation
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
   const [confirmTitle, setConfirmTitle] = useState("");
@@ -92,10 +92,7 @@ export default function CartScreen() {
       .eq("client_id", client.codeClient)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Erreur récupération commandes :", error);
-      return;
-    }
+    if (error) return;
     setPreviousOrders(data || []);
   };
 
@@ -179,17 +176,17 @@ export default function CartScreen() {
     <View style={styles.container}>
 
       {/* Header Panier : Titre ou Bouton Vider */}
-      {cart.length > 0 ? (
-        <TouchableOpacity style={styles.clearButton} onPress={handleClearCart}>
-          <MaterialIcons name="delete-outline" size={20} color="#fff" />
-          <Text style={{color:'#fff', marginLeft:5, fontWeight:'600'}}>Tout supprimer</Text>
-        </TouchableOpacity>
-      ) : (
-        <View style={{height: 40}} /> // Spacer
-      )}
+      <View style={styles.headerContainer}>
+        {cart.length > 0 ? (
+            <TouchableOpacity style={styles.clearButton} onPress={handleClearCart}>
+            <MaterialIcons name="delete-outline" size={20} color="#fff" />
+            <Text style={{color:'#fff', marginLeft:5, fontWeight:'600'}}>Tout supprimer</Text>
+            </TouchableOpacity>
+        ) : null}
+      </View>
 
-      {/* Contenu principal */}
-      <View style={{flex: 1}}>
+      {/* Contenu principal (Liste) */}
+      <View style={styles.listContainer}>
           {cart.length < 1 && (
             <View style={styles.emptyContainer}>
                 <MaterialIcons name="shopping-cart" size={64} color="#DDD" />
@@ -200,7 +197,8 @@ export default function CartScreen() {
           <FlatList
             data={cart}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingBottom: 100 }} // Espace pour les boutons fixes
+            // On laisse de l'espace en bas pour que le dernier item ne soit pas caché par le footer fixe
+            contentContainerStyle={{ paddingBottom: 200, paddingTop: 10 }}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => openEditModal(item)}>
                 <View style={styles.item}>
@@ -217,6 +215,7 @@ export default function CartScreen() {
       </View>
 
       {/* --- ZONE BOUTONS FIXES (BAS DE PAGE) --- */}
+      {/* Position absolute pour garantir l'affichage par dessus tout */}
       <View style={styles.footerButtons}>
         
         {/* Bouton Scanner (Toujours visible) */}
@@ -341,23 +340,36 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7F9FC", padding: 20 },
+  container: { flex: 1, backgroundColor: "#F7F9FC" },
+  headerContainer: { paddingHorizontal: 20, paddingTop: 20 },
+  listContainer: { flex: 1, paddingHorizontal: 20 },
   
-  // Header buttons
-  clearButton: { flexDirection:'row', backgroundColor: "#E63946", padding: 8, paddingHorizontal:12, borderRadius: 20, alignSelf: "flex-end", marginBottom: 10, alignItems:'center' },
+  clearButton: { flexDirection:'row', backgroundColor: "#E63946", padding: 8, paddingHorizontal:12, borderRadius: 20, alignSelf: "flex-end", marginBottom: 5, alignItems:'center' },
   
-  // Empty State
   emptyContainer: { alignItems:'center', justifyContent:'center', marginTop: 100 },
   noArticleText: { fontSize: 18, color: "#999", marginTop: 10, fontWeight:'500' },
 
-  // List Item
   item: { backgroundColor: "#fff", padding: 15, borderRadius: 12, marginBottom: 12, shadowColor:'#000', shadowOpacity:0.05, shadowRadius:5, elevation:2 },
   title: { fontSize: 16, fontWeight: "600", color:'#333' },
   subtitle: { color: "#666", fontSize:14 },
   remove: { color: "#E63946", fontWeight:'600', fontSize:14 },
 
-  // Footer Actions (Sticky Bottom)
-  footerButtons: { paddingTop: 10, borderTopWidth:1, borderTopColor:'#eee', backgroundColor:'#F7F9FC' },
+  // Footer Actions (Sticky Bottom via absolute)
+  footerButtons: { 
+    position: 'absolute', 
+    bottom: 0, 
+    left: 0, 
+    right: 0,
+    backgroundColor: '#fff', 
+    borderTopWidth: 1, 
+    borderTopColor: '#eee',
+    padding: 15,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
   
   scanMoreButton: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
@@ -391,7 +403,6 @@ const styles = StyleSheet.create({
   modalSubtitle: { fontSize: 14, color: "#64748B", marginBottom: 15 },
   closeIconButton: { padding: 5, backgroundColor: "#E2E8F0", borderRadius: 20 },
   
-  // Order Card in Modal
   orderCard: { backgroundColor: "#fff", borderRadius: 12, padding: 15, marginBottom: 10, borderWidth: 1, borderColor: "#eee" },
   orderCardHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
   orderNumberContainer: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },

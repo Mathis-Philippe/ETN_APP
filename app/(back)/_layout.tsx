@@ -1,16 +1,35 @@
-// app/back/_layout.tsx
-import { Tabs, Redirect } from "expo-router";
+import { Tabs, Redirect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "react-native";
+import { Image, TouchableOpacity, Alert } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 
 export default function BackLayout() {
-  const { isLoggedIn, isAdmin } = useAuth();
+  const { isLoggedIn, isAdmin, logout } = useAuth();
+  const router = useRouter();
 
   // 🔐 Sécurité : si non admin, on renvoie à l’accueil
   if (!isLoggedIn || !isAdmin) {
     return <Redirect href="/(tabs)" />;
   }
+
+  // Fonction de déconnexion
+  const handleLogout = () => {
+    Alert.alert(
+      "Déconnexion",
+      "Voulez-vous vraiment vous déconnecter ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        { 
+          text: "Déconnexion", 
+          style: "destructive", 
+          onPress: async () => {
+            await logout();
+            router.replace("/");
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <Tabs
@@ -38,6 +57,12 @@ export default function BackLayout() {
             source={require("../../assets/images/etn.png")}
             style={{ width: 120, height: 100, resizeMode: "contain" }}
           />
+        ),
+        // --- AJOUT DU BOUTON DÉCONNEXION ICI ---
+        headerRight: () => (
+          <TouchableOpacity onPress={handleLogout} style={{ marginRight: 20 }}>
+            <Ionicons name="log-out-outline" size={28} color="#E63946" />
+          </TouchableOpacity>
         ),
         headerStyle: {
           backgroundColor: "#fff",
