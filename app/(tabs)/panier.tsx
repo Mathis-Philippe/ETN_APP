@@ -1,7 +1,7 @@
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { useCart } from "../../context/CartContext";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons , MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import supabase from "../../lib/supabase";
@@ -216,6 +216,17 @@ export default function CartScreen() {
       <FlatList
         data={cart}
         keyExtractor={(item) => item.id}
+        ListFooterComponent={() => (
+          <View style={{ marginTop: 20, marginBottom: 10 }}>
+            <TouchableOpacity 
+              style={styles.scanMoreButton} 
+              onPress={() => router.push("/(tabs)")}
+            >
+              <MaterialCommunityIcons name="qrcode-scan" size={20} color="#4A90E2" />
+              <Text style={styles.scanMoreText}>Scanner un autre article</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => openEditModal(item)}>
             <View style={styles.item}>
@@ -417,6 +428,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#E2E8F0",
     borderRadius: 20,
   },
+
+  scanMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 15,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#4A90E2",
+    borderRadius: 10,
+    gap: 10,
+  },
+  scanMoreText: {
+    color: "#4A90E2",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
   // Style de la CARTE COMMANDE
   orderCard: {
     backgroundColor: "#fff",

@@ -1,18 +1,14 @@
-import { View, Text, Button, StyleSheet } from "react-native";
+import { View, Text, Button, StyleSheet, TouchableOpacity } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { useState } from "react";
+import { MaterialIcons } from "@expo/vector-icons"; // Pour l'icône flash
 
 export default function QrScanner({ onScan }: { onScan: (data: string) => void }) {
-  // Le hook charge le statut actuel sans forcer la popup système
   const [permission, requestPermission] = useCameraPermissions();
+  const [torch, setTorch] = useState(false); // État pour le flash
 
-  // 1. Tant que le hook vérifie le statut (c'est très rapide), on affiche une vue vide
-  if (!permission) {
-    return <View />;
-  }
+  if (!permission) return <View />;
 
-  // 2. Si la permission n'est PAS accordée, on affiche un message et un bouton.
-  // IMPORTANT : On ne lance pas requestPermission() automatiquement ici, sinon ça boucle.
-  // C'est l'utilisateur qui doit cliquer.
   if (!permission.granted) {
     return (
       <View style={styles.container}>
@@ -22,15 +18,26 @@ export default function QrScanner({ onScan }: { onScan: (data: string) => void }
     );
   }
 
-  // 3. Si on arrive ici, c'est que permission.granted est TRUE.
-  // Le téléphone se souvient du choix et affiche direct la caméra.
   return (
     <View style={{ flex: 1 }}>
       <CameraView
         style={{ flex: 1 }}
+        facing="back"
+        enableTorch={torch} // Active le flash si demandé
+        autofocus="on" // FORCE LE FOCUS pour Android
         barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
         onBarcodeScanned={({ data }) => onScan(data)}
-      />
+      >
+        {/* Bouton pour activer/désactiver le flash - aide au focus en basse lumière */}
+        <View style={styles.controls}>
+          <TouchableOpacity 
+            style={[styles.torchButton, torch && styles.torchActive]} 
+            onPress={() => setTorch(!torch)}
+          >
+            <MaterialIcons name={torch ? "flash-on" : "flash-off"} size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </CameraView>
     </View>
   );
 }
@@ -46,5 +53,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontSize: 16,
     textAlign: "center"
+  },
+  controls: {
+    position: 'absolute',
+    bottom: 30,
+    alignSelf: 'center',
+  },
+  torchButton: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 15,
+    borderRadius: 50,
+  },
+  torchActive: {
+    backgroundColor: '#FFD700',
   }
 });
