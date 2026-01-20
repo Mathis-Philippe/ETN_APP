@@ -221,7 +221,7 @@ export default function CartScreen() {
         {/* Bouton Scanner (Toujours visible) */}
         <TouchableOpacity 
             style={styles.scanMoreButton} 
-            onPress={() => router.push("/(tabs)")}
+            onPress={() => router.push("/(tabs)?autostart=true")}
         >
             <MaterialCommunityIcons name="qrcode-scan" size={20} color="#4A90E2" />
             <Text style={styles.scanMoreText}>Scanner un article</Text>
@@ -304,10 +304,10 @@ export default function CartScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitleOld}>Validation</Text>
-            <TextInput style={styles.input} placeholder="Prénom" value={firstName} onChangeText={setFirstName} />
-            <TextInput style={styles.input} placeholder="Nom" value={lastName} onChangeText={setLastName} />
-            <TextInput style={styles.input} placeholder="N° Commande" value={orderNumber} onChangeText={setOrderNumber} />
-            <TextInput style={styles.input} placeholder="Commentaire" value={comment} onChangeText={setComment} />
+            <TextInput style={styles.input} placeholder="Prénom" value={firstName} onChangeText={setFirstName} placeholderTextColor={"#999"} />
+            <TextInput style={styles.input} placeholder="Nom" value={lastName} onChangeText={setLastName} placeholderTextColor={"#999"} />
+            <TextInput style={styles.input} placeholder="N° Commande" value={orderNumber} onChangeText={setOrderNumber} placeholderTextColor={"#999"} />
+            <TextInput style={styles.input} placeholder="Commentaire" value={comment} onChangeText={setComment} placeholderTextColor={"#999"} />
             
             <TouchableOpacity style={styles.saveButton} onPress={handleCheckout} disabled={isSubmitting}>
               <Text style={styles.saveText}>{isSubmitting ? "Envoi..." : "Envoyer commande"}</Text>

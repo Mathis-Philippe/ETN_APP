@@ -1,59 +1,59 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router"; // AJOUT: useLocalSearchParams
+import { useState, useEffect } from "react"; // AJOUT: useEffect
+import { StyleSheet, Text, TouchableOpacity, View, StatusBar as RNStatusBar, Platform } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
 import { useAuth } from "../../context/AuthContext";
 import { parseQrData } from "../../lib/qrParser";
 import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
-// NOUVEAU: Import du composant QrScanner cross-platform
-import QrScanner from "../../components/QrScanner"; 
-// REMPLACÉ: Suppression des imports CameraView et useCameraPermissions
+import QrScanner from "../../components/QrScanner";
+import { Ionicons } from "@expo/vector-icons"; 
 
 export default function HomeScreen() {
-  // SUPPRIMÉ: Les permissions sont gérées dans QrScanner.
-  // const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
+  
   const router = useRouter();
+  const { autostart } = useLocalSearchParams(); // Récupère le paramètre
   const { client } = useAuth();
 
-  // SUPPRIMÉ: Toute la logique de vérification de permission
-  /*
-  if (!permission) return <View />;
-  if (!permission.granted) {
-    return (
-      <View style={styles.centered}>
-        <Text>Permission caméra requise</Text>
-        <TouchableOpacity onPress={requestPermission}>
-          <Text style={styles.buttonText}>Autoriser</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-  */
+  // NOUVEAU : Détecte si on vient du panier avec la demande d'ouverture auto
+  useEffect(() => {
+    if (autostart === 'true') {
+      setScanning(true);
+      setScanned(false);
+      // On nettoie le paramètre pour éviter que ça se rouvre en boucle si on navigue
+      router.setParams({ autostart: undefined });
+    }
+  }, [autostart]);
 
-  // CHANGEMENT DE SIGNATURE: onScan fournit la chaîne 'data' directement
   const handleScan = (data: string) => {
     if (scanned) return;
     setScanned(true);
-    setScanning(false);
 
     const { codeClient, reference } = parseQrData(data);
 
     if (reference) {
-      // QR d'article
+      setScanning(false);
       router.push({ pathname: "/ArticleDetail", params: { qrData: data } });
     } else if (codeClient) {
-      // QR de connexion (devrait être sur l'écran Login, mais gérons l'erreur)
+      setScanning(false);
       Toast.show({
         type: "error",
         text1: "QR code invalide",
-        text2: "Impossible de reconnaitre ce QR code.",
-    });
-    setTimeout(() => setScanned(false), 1500);
-  }
-};
+        text2: "Ce QR code est destiné à la connexion.",
+      });
+    } else {
+       setScanning(false);
+       Toast.show({
+        type: "error",
+        text1: "QR code inconnu",
+        text2: "Impossible de reconnaître ce format.",
+      });
+    }
+
+    setTimeout(() => setScanned(false), 2000);
+  };
 
   function QrSvg({ size = 28 }: { size?: number }) {
     return (
@@ -66,45 +66,82 @@ export default function HomeScreen() {
     );
   }
 
+  // --- MODE SCANNER ---
+  if (scanning) {
+    return (
+      <View style={styles.scannerContainer}>
+        <StatusBar style="light" />
+        <QrScanner onScan={handleScan} />
+
+        <TouchableOpacity 
+          style={styles.closeButton} 
+          onPress={() => setScanning(false)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="close" size={24} color="#fff" />
+          <Text style={styles.closeText}>Fermer</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // --- MODE ACCUEIL ---
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      {!scanning ? (
-        <>
-          <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 20, textAlign: "center" }}>
-            Bienvenue <Text>{client?.nom ?? ""}</Text>
-          </Text>
+      
+      <Text style={styles.welcomeTitle}>
+        Bienvenue <Text style={styles.clientName}>{client?.nom ?? ""}</Text>
+      </Text>
 
-          <Text style={{ fontSize: 16, color: "#555", textAlign: "center", marginBottom: 40 }}>
-            Scannez un QR code pour ajouter un article.
-          </Text>
+      <Text style={styles.instructionText}>
+        Scannez un QR code pour ajouter un article.
+      </Text>
 
-          <TouchableOpacity
-            style={styles.scanButton}
-            onPress={() => {
-              setScanning(true);
-              setScanned(false);
-            }}
-          >
-            <QrSvg size={28} />
-            <Text style={styles.scanText}>Scanner un QR</Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        // REMPLACÉ: Utilisation du QrScanner cross-platform
-        <View style={styles.cameraContainer}> 
-          <QrScanner
-            onScan={handleScan}
-          />
-        </View>
-      )}
+      <TouchableOpacity
+        style={styles.scanButton}
+        onPress={() => {
+          setScanning(true);
+          setScanned(false);
+        }}
+        activeOpacity={0.8}
+      >
+        <QrSvg size={28} />
+        <Text style={styles.scanText}>Scanner un QR</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20, backgroundColor: "#fff" },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#fff", 
+    justifyContent: "center", 
+    alignItems: "center", 
+    paddingHorizontal: 20 
+  },
+  scannerContainer: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  welcomeTitle: { 
+    fontSize: 22, 
+    fontWeight: "bold", 
+    marginBottom: 20, 
+    textAlign: "center",
+    color: "#333"
+  },
+  clientName: {
+    color: "#1e90ff"
+  },
+  instructionText: { 
+    fontSize: 16, 
+    color: "#666", 
+    textAlign: "center", 
+    marginBottom: 40,
+    lineHeight: 22
+  },
   scanButton: {
     backgroundColor: "#1e90ff",
     paddingVertical: 18,
@@ -117,18 +154,29 @@ const styles = StyleSheet.create({
     elevation: 6,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
   },
-  scanText: { color: "#fff", fontSize: 17, fontWeight: "600" },
-  // AJOUTÉ: style manquant pour le conteneur du scanner web
-  cameraContainer: { 
-    flex: 1, 
-    width: "100%", 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  scanText: { 
+    color: "#fff", 
+    fontSize: 17, 
+    fontWeight: "600" 
   },
-  camera: { flex: 1, width: "100%" },
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.2)", justifyContent: "center", alignItems: "center" },
-  scanBox: { width: 260, height: 260, borderWidth: 3, borderColor: "#1e90ff", borderRadius: 20 },
-  buttonText: { color: "#1e90ff", fontSize: 16, fontWeight: "600", marginTop: 15 },
+  closeButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 40,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    zIndex: 50
+  },
+  closeText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14
+  }
 });
