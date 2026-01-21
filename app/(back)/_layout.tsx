@@ -1,6 +1,6 @@
 import { Tabs, Redirect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, TouchableOpacity, Alert } from "react-native";
+import { Image, TouchableOpacity, Alert, Platform } from "react-native"; // <--- Ajout de Platform
 import { useAuth } from "../../context/AuthContext";
 
 export default function BackLayout() {
@@ -14,21 +14,31 @@ export default function BackLayout() {
 
   // Fonction de déconnexion
   const handleLogout = () => {
-    Alert.alert(
-      "Déconnexion",
-      "Voulez-vous vraiment vous déconnecter ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        { 
-          text: "Déconnexion", 
-          style: "destructive", 
-          onPress: async () => {
-            await logout();
-            router.replace("/");
+    // Gestion spécifique pour le Web (PC)
+    if (Platform.OS === 'web') {
+      const confirm = window.confirm("Voulez-vous vraiment vous déconnecter ?");
+      if (confirm) {
+        logout(); // On ne met pas await ici car logout est souvent synchrone ou géré vite, mais tu peux le mettre async si besoin
+        router.replace("/");
+      }
+    } else {
+      // Gestion Mobile (iOS / Android)
+      Alert.alert(
+        "Déconnexion",
+        "Voulez-vous vraiment vous déconnecter ?",
+        [
+          { text: "Annuler", style: "cancel" },
+          { 
+            text: "Déconnexion", 
+            style: "destructive", 
+            onPress: async () => {
+              await logout();
+              router.replace("/");
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    }
   };
 
   return (
@@ -58,7 +68,7 @@ export default function BackLayout() {
             style={{ width: 120, height: 100, resizeMode: "contain" }}
           />
         ),
-        // --- AJOUT DU BOUTON DÉCONNEXION ICI ---
+        // --- BOUTON DÉCONNEXION ---
         headerRight: () => (
           <TouchableOpacity onPress={handleLogout} style={{ marginRight: 20 }}>
             <Ionicons name="log-out-outline" size={28} color="#E63946" />
