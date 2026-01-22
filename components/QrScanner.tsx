@@ -1,50 +1,90 @@
-import { View, Text, Button, StyleSheet, TouchableOpacity } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import { useState } from "react";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useIsFocused } from "@react-navigation/native";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from "react-native";
+import { CameraView, useCameraPermissions, BarcodeScanningResult } from "expo-camera";
+import { Ionicons } from "@expo/vector-icons"; // Assure-toi d'avoir les icônes
 
-export default function QrScanner({ onScan }: { onScan: (data: string) => void }) {
+type Props = {
+  onScan: (data: string) => void;
+};
+
+export default function QrScanner({ onScan }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
-  const [torch, setTorch] = useState(false);
-  const isFocused = useIsFocused();
+  const [zoom, setZoom] = useState(0);
+  const [scanned, setScanned] = useState(false);
+  const [facing, setFacing] = useState<"back" | "front">("back");
 
-  if (!permission) return <View />;
+  useEffect(() => {
+    if (!permission) {
+      requestPermission();
+    }
+  }, [permission]);
 
-  if (!permission.granted) {
+  if (!permission?.granted) {
     return (
-      <View style={styles.centeredContainer}>
-        <Text style={styles.message}>Accès caméra requis</Text>
-        <Button onPress={requestPermission} title="Autoriser la caméra" />
+      <View style={styles.container}>
+        <Text style={{ textAlign: "center", marginBottom: 10 }}>
+          Permission caméra requise
+        </Text>
+        <TouchableOpacity onPress={requestPermission} style={styles.btn}>
+          <Text style={styles.btnText}>Autoriser</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // Petit délai ou écran noir si pas focus (aide le cycle de vie Android)
-  if (!isFocused) {
-    return <View style={styles.container} />;
-  }
+  const handleBarcodeScanned = (result: BarcodeScanningResult) => {
+    if (scanned) return;
+    setScanned(true);
+    onScan(result.data);
+    setTimeout(() => setScanned(false), 2000); 
+  };
+
+  // Gestion du Zoom
+  const handleZoom = (factor: number) => {
+    let newZoom = zoom + factor;
+    if (newZoom < 0) newZoom = 0;
+    if (newZoom > 1) newZoom = 1; // Le zoom max est 1 (100% du zoom digital supporté)
+    setZoom(newZoom);
+  };
 
   return (
     <View style={styles.container}>
-      {/* LA CAMÉRA : On force la taille à 100% absolue */}
       <CameraView
-        style={StyleSheet.absoluteFill} 
-        facing="back"
-        enableTorch={torch}
-        barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-        onBarcodeScanned={({ data }) => onScan(data)}
-      />
+        style={StyleSheet.absoluteFillObject}
+        facing={facing}
+        onBarcodeScanned={handleBarcodeScanned}
+        enableTorch={false}
+        ratio="16:9"
+        autofocus="on" // 👈 CRUCIAL pour Android
+        zoom={0.1}    // 👈 Gestion du zoom
+        responsiveOrientationWhenOrientationLocked
+      >
+        {/* Overlay pour guider l'utilisateur */}
+        <View style={styles.overlay}>
+          <View style={styles.controls}>
+            
+            {/* Contrôles de Zoom */}
+            <View style={styles.zoomContainer}>
+              <TouchableOpacity onPress={() => handleZoom(-0.1)} style={styles.zoomBtn}>
+                <Ionicons name="remove-circle-outline" size={32} color="white" />
+              </TouchableOpacity>
+              <Text style={styles.zoomText}>{(zoom * 10).toFixed(1)}x</Text>
+              <TouchableOpacity onPress={() => handleZoom(0.1)} style={styles.zoomBtn}>
+                <Ionicons name="add-circle-outline" size={32} color="white" />
+              </TouchableOpacity>
+            </View>
 
-      {/* LES CONTRÔLES : Posés par dessus */}
-      <View style={styles.controls}>
-        <TouchableOpacity 
-          style={[styles.torchButton, torch && styles.torchActive]} 
-          onPress={() => setTorch(!torch)}
-        >
-          <MaterialIcons name={torch ? "flash-on" : "flash-off"} size={24} color="white" />
-        </TouchableOpacity>
-      </View>
+            {/* Bouton pour changer de caméra (Flip) */}
+            <TouchableOpacity 
+              style={styles.flipBtn}
+              onPress={() => setFacing(current => (current === "back" ? "front" : "back"))}
+            >
+              <Ionicons name="camera-reverse-outline" size={28} color="white" />
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </CameraView>
     </View>
   );
 }
@@ -52,34 +92,52 @@ export default function QrScanner({ onScan }: { onScan: (data: string) => void }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000', // Fond noir : si la caméra ne charge pas, on verra du noir au lieu du blanc
-  },
-  centeredContainer: {
-    flex: 1,
+    backgroundColor: "black",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
-  message: {
-    marginBottom: 10,
-    fontSize: 16,
-    textAlign: "center"
+  overlay: {
+    flex: 1,
+    backgroundColor: "transparent",
+    justifyContent: "flex-end", // Contrôles en bas
+    paddingBottom: 40,
   },
   controls: {
-    position: 'absolute',
-    bottom: 50,
-    alignSelf: 'center',
-    zIndex: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 30,
+    width: "100%",
   },
-  torchButton: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 20,
+  zoomContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 20,
+    padding: 5,
+  },
+  zoomBtn: {
+    padding: 5,
+  },
+  zoomText: {
+    color: "white",
+    fontWeight: "bold",
+    marginHorizontal: 10,
+    minWidth: 30,
+    textAlign: "center",
+  },
+  flipBtn: {
+    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 12,
     borderRadius: 50,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
-  torchActive: {
-    backgroundColor: '#FFD700',
-    borderColor: '#FFD700',
-  }
+  btn: {
+    backgroundColor: "#2563EB",
+    padding: 12,
+    borderRadius: 8,
+  },
+  btnText: {
+    color: "white",
+    fontWeight: "600",
+  },
 });
