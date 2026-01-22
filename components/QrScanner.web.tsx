@@ -20,15 +20,15 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
 
     const startCamera = async () => {
       try {
-        // CORRECTION TS : On caste en 'any' pour autoriser focusMode
+        // CORRECTION IMPORTANTE : 
+        // On ne définit PAS de width/height fixes (ex: 1280x720).
+        // Cela force souvent Android à cropper l'image, ce qui désactive l'autofocus matériel.
+        // On laisse le navigateur choisir la résolution native du capteur.
         const constraints: any = {
           video: { 
             facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            // Ces propriétés sont non-standard mais vitales pour Samsung
-            focusMode: 'continuous',
-            advanced: [{ focusMode: 'continuous' }]
+            // On demande le focus continu standard dès le début
+            focusMode: 'continuous' 
           }
         };
 
@@ -41,14 +41,29 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
 
         activeStream = stream;
 
-        // Force le focus une deuxième fois sur la track active
+        // --- GESTION AVANCÉE DU FOCUS (Correctif Samsung/Android) ---
         const track = stream.getVideoTracks()[0];
         const capabilities = track.getCapabilities() as any;
+        const settings = track.getSettings() as any;
 
+        // Si le focus continu est supporté par le matériel...
         if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-             // @ts-ignore
-             await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
-             console.log("Focus continu forcé.");
+             // ... et qu'il n'est pas déjà actif
+             if (settings.focusMode !== 'continuous') {
+                 try {
+                    // On attend 500ms que le driver de la caméra se stabilise avant d'appliquer la contrainte.
+                    // C'est souvent ce changement immédiat qui rendait l'image floue après 1s.
+                    await new Promise(r => setTimeout(r, 500));
+                    
+                    if (isMounted && track.readyState === 'live') {
+                        // @ts-ignore
+                        await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+                        console.log("Focus continu forcé avec succès.");
+                    }
+                 } catch (e) {
+                    console.log("Le focus continu n'a pas pu être forcé (ce n'est pas grave) :", e);
+                 }
+             }
         }
 
         if (videoRef.current) {
@@ -112,7 +127,7 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
 
     setAnalyzing(true);
     try {
-      // Priorité Natif
+      // Priorité Natif (BarcodeDetector sur Android récent/Chrome)
       // @ts-ignore
       if ('BarcodeDetector' in window) {
         try {
@@ -123,7 +138,7 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
         } catch (e) {}
       }
       
-      // Fallback ZXing
+      // Fallback ZXing avec rotation de l'image
       const imgUrl = URL.createObjectURL(file);
       await processImageWithRotation(imgUrl);
       URL.revokeObjectURL(imgUrl);
@@ -156,7 +171,7 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
           const ctx = canvas.getContext('2d', { willReadFrequently: true });
           if (!ctx) throw new Error("Canvas erreur");
 
-          // Test des 4 rotations
+          // Test des 4 rotations pour être sûr de lire le code
           for (let angle of [0, 90, 180, 270]) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.save();
@@ -182,17 +197,14 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
 
   return (
     <View style={styles.container}>
-      {/* Video HTML brute 
-         On utilise 'scale(1.0)' finalement car le 720p devrait être net nativement.
-         Si besoin, remettez 1.1 ou 1.2.
-      */}
+      {/* Video HTML brute */}
       <div style={{ width: '100%', height: '100%', position: 'absolute', overflow: 'hidden', backgroundColor: '#000' }}>
         <video
           ref={videoRef}
           style={{ 
             width: '100%', 
             height: '100%', 
-            objectFit: 'cover',
+            objectFit: 'cover', // Remplit l'écran sans déformer
           }}
           muted
           playsInline
@@ -219,7 +231,7 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
         <View style={styles.bottomControls}>
             <Text style={styles.hintText}>Si le scanner est flou :</Text>
             
-            {/* Input caché */}
+            {/* Input caché pour le fallback photo */}
             <input
                 ref={fileInputRef}
                 type="file"
