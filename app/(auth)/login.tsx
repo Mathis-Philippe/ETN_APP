@@ -160,7 +160,6 @@ export default function LoginScreen() {
         {/* Caméra Modal */}
         <Modal visible={cameraVisible} animationType="slide">
           <QrScanner onScan={handleScan} />
-          <View style={styles.scanFrame} />
           <View style={styles.closeWrapper}>
             <TouchableOpacity
               style={styles.closeButton}
@@ -244,7 +243,6 @@ const styles = StyleSheet.create({
   },
 
   /* Caméra Overlay */
-  scanFrame: { position: "absolute", top: "30%", left: "15%", width: "70%", height: 270, borderWidth: 3, borderColor: "#ffffffff", borderRadius: 16, pointerEvents: "none" },
   closeWrapper: { position: "absolute", bottom: 40, alignSelf: "center" },
   closeButton: { backgroundColor: "#DC2626", paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8 },
   closeButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
