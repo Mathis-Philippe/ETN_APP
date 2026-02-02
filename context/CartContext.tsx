@@ -5,6 +5,7 @@ type Article = {
   code: string;
   designation: string;
   quantite: number;
+  longueur?: number;
 };
 
 type CartContextType = {
@@ -23,7 +24,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Ajouter un article au panier
   const addToCart = (article: Article) => {
     setCart((prev) => {
-      const existing = prev.find((a) => a.id === article.id);
+      const existing = prev.find((a) => 
+        a.id === article.id && a.longueur === article.longueur
+      );
 
       if (existing) {
         // Si l'article est déjà dans le panier, on ajoute la quantité

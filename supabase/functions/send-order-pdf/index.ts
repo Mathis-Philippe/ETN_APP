@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     // Envoi de l’email
     await resend.emails.send({
       from: "mathis.philippe2005@gmail.com", // doit être un email vérifié ResendA
-      to: "mathis.philippe2005@gmail.com",
+      to: "mathisphilippeminecraft@gmail.com",
       subject: `Bon de commande #${orderNumber}`,
       html: `<p>Nouveau bon de commande de ${firstName} ${lastName}</p>`,
       attachments: [

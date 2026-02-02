@@ -102,7 +102,7 @@ export default function LoginScreen() {
             setCameraVisible(true);
           }}
         >
-          <Text style={styles.scanButtonText}>📸 Scanner mon QR Code</Text>
+          <Text style={styles.scanButtonText}>Scanner mon QR Code</Text>
         </TouchableOpacity>
 
         {/* --- SECTION LOGIN MANUEL (CACHÉE PAR DÉFAUT) --- */}

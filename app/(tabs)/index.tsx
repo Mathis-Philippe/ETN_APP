@@ -1,5 +1,5 @@
-import { useRouter, useLocalSearchParams } from "expo-router"; // AJOUT: useLocalSearchParams
-import { useState, useEffect } from "react"; // AJOUT: useEffect
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useState, useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View, StatusBar as RNStatusBar, Platform } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
 import { useAuth } from "../../context/AuthContext";
@@ -14,15 +14,13 @@ export default function HomeScreen() {
   const [scanned, setScanned] = useState(false);
   
   const router = useRouter();
-  const { autostart } = useLocalSearchParams(); // Récupère le paramètre
+  const { autostart } = useLocalSearchParams(); 
   const { client } = useAuth();
 
-  // NOUVEAU : Détecte si on vient du panier avec la demande d'ouverture auto
   useEffect(() => {
     if (autostart === 'true') {
       setScanning(true);
       setScanned(false);
-      // On nettoie le paramètre pour éviter que ça se rouvre en boucle si on navigue
       router.setParams({ autostart: undefined });
     }
   }, [autostart]);
@@ -35,6 +33,7 @@ export default function HomeScreen() {
 
     if (reference) {
       setScanning(false);
+      // 👇 Redirection simple vers la page détail qui gère tout
       router.push({ pathname: "/ArticleDetail", params: { qrData: data } });
     } else if (codeClient) {
       setScanning(false);
@@ -72,7 +71,6 @@ export default function HomeScreen() {
       <View style={styles.scannerContainer}>
         <StatusBar style="light" />
         <QrScanner onScan={handleScan} />
-
         <TouchableOpacity 
           style={styles.closeButton} 
           onPress={() => setScanning(false)}
@@ -89,15 +87,12 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      
       <Text style={styles.welcomeTitle}>
         Bienvenue <Text style={styles.clientName}>{client?.nom ?? ""}</Text>
       </Text>
-
       <Text style={styles.instructionText}>
         Scannez un QR code pour ajouter un article.
       </Text>
-
       <TouchableOpacity
         style={styles.scanButton}
         onPress={() => {
@@ -114,69 +109,21 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#fff", 
-    justifyContent: "center", 
-    alignItems: "center", 
-    paddingHorizontal: 20 
-  },
-  scannerContainer: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  welcomeTitle: { 
-    fontSize: 22, 
-    fontWeight: "bold", 
-    marginBottom: 20, 
-    textAlign: "center",
-    color: "#333"
-  },
-  clientName: {
-    color: "#1e90ff"
-  },
-  instructionText: { 
-    fontSize: 16, 
-    color: "#666", 
-    textAlign: "center", 
-    marginBottom: 40,
-    lineHeight: 22
-  },
+  container: { flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 },
+  scannerContainer: { flex: 1, backgroundColor: "#000" },
+  welcomeTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 20, textAlign: "center", color: "#333" },
+  clientName: { color: "#1e90ff" },
+  instructionText: { fontSize: 16, color: "#666", textAlign: "center", marginBottom: 40, lineHeight: 22 },
   scanButton: {
-    backgroundColor: "#1e90ff",
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    borderRadius: 16,
-    shadowColor: "#1e90ff",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+    backgroundColor: "#1e90ff", paddingVertical: 18, paddingHorizontal: 32, borderRadius: 16,
+    shadowColor: "#1e90ff", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 10,
+    elevation: 6, flexDirection: "row", alignItems: "center", gap: 12,
   },
-  scanText: { 
-    color: "#fff", 
-    fontSize: 17, 
-    fontWeight: "600" 
-  },
+  scanText: { color: "#fff", fontSize: 17, fontWeight: "600" },
   closeButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 40,
-    right: 20,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    zIndex: 50
+    position: 'absolute', top: Platform.OS === 'ios' ? 50 : 40, right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20,
+    flexDirection: 'row', alignItems: 'center', gap: 6, zIndex: 50
   },
-  closeText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14
-  }
+  closeText: { color: '#fff', fontWeight: '600', fontSize: 14 }
 });
