@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
 
     // Envoi de l’email
     await resend.emails.send({
-      from: "etn@equipement-technique-du-nord.fr", // doit être un email vérifié ResendA
+      from: "commandes@etn-app.fr", // doit être un email vérifié ResendA
       to: "etn@equipement-technique-du-nord.fr",
       subject: `Bon de commande #${orderNumber}`,
       html: `<p>Nouveau bon de commande de ${firstName} ${lastName}</p>`,
