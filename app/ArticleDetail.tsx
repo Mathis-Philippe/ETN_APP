@@ -388,7 +388,6 @@ const styles = StyleSheet.create({
   qtyInput: {
     flex: 1,
     textAlign: "center",
-    fontSize: 22,
     fontWeight: "bold",
     color: "#1F2937",
     padding: 0,

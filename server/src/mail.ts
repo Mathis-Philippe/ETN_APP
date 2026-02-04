@@ -20,7 +20,7 @@ export async function sendOrderEmail(opts: {
   try {
 
     const data = await resend.emails.send({
-      from: 'ETN <onboarding@resend.dev>',
+      from: 'ETN <commandes@etn-app.fr>',
       to: [opts.to],
       subject: opts.subject,
       text: opts.text || '',
