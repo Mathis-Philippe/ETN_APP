@@ -56,7 +56,7 @@ app.post('/send-order-pdf', async (req, res) => {
     const pdfBuffer = Buffer.from(pdfUint8Array);
 
     await sendOrderEmail({
-      to: payload.toEmail,
+      to: "etn@equipement-technique-du-nord.fr",
       subject: `Nouvelle Commande #${payload.orderNumber} - ${clientData.nom}`,
       // Ajout du nom du contact dans le corps du mail
       text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par ${clientData.nom} (Contact : ${contactName}).\n\nVous trouverez le bon de commande en pièce jointe.`,
