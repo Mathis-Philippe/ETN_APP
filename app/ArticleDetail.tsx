@@ -19,7 +19,7 @@ import { useCart } from "../context/CartContext";
 import { parseQrData } from "../lib/qrParser";
 
 export default function ArticleDetail() {
-  const { qrData } = useLocalSearchParams<{ qrData?: string }>();
+  const { qrData, manualId } = useLocalSearchParams<{ qrData?: string, manualId?: string }>();
   const router = useRouter();
   const { addToCart } = useCart();
 
@@ -32,7 +32,7 @@ export default function ArticleDetail() {
   const [length, setLength] = useState<string>(""); 
   const [isTuyau, setIsTuyau] = useState(false); 
 
-  useEffect(() => {
+useEffect(() => {
     const fetchArticle = async () => {
       setLoading(true);
       setError(null);
@@ -41,32 +41,55 @@ export default function ArticleDetail() {
       setLength("");
 
       try {
-        if (!qrData) {
-          setError("QR code vide ❌");
-          return;
-        }
+        let data = null;
 
-        const { reference } = parseQrData(qrData);
+        if (manualId) {
+          const res = await supabase
+            .from("articles")
+            .select("id, reference, designation, categorie")
+            .eq("id", manualId)
+            .maybeSingle();
 
-        if (!reference) {
-          setError("Référence introuvable");
-          return;
-        }
+          data = res.data;
 
-        let { data, error } = await supabase
-          .from("articles")
-          .select("id, reference, designation, categorie")
-          .eq("reference", reference)
-          .maybeSingle();
+          if (!data) {
+            setError(`Article introuvable avec l'ID : ${manualId}`);
+            return;
+          }
+        } 
+        
+        else {
+          if (!qrData) {
+            setError("Aucune donnée reçue ❌");
+            return;
+          }
 
-        if (!data) {
-             const res2 = await supabase.from("articles").select("*").ilike("reference", reference).maybeSingle();
-             data = res2.data;
-        }
+          let reference = parseQrData(qrData).reference;
 
-        if (!data) {
-          setError("Aucun article trouvé");
-          return;
+          if (!reference) {
+            setError("Référence introuvable dans le QR code");
+            return;
+          }
+
+          reference = reference.trim();
+
+          let res = await supabase
+            .from("articles")
+            .select("id, reference, designation, categorie")
+            .eq("reference", reference)
+            .maybeSingle();
+
+          data = res.data;
+
+          if (!data) {
+            const res2 = await supabase.from("articles").select("*").ilike("reference", reference).maybeSingle();
+            data = res2.data;
+          }
+
+          if (!data) {
+            setError(`Introuvable en base. Réf cherchée : "${reference}"`);
+            return;
+          }
         }
 
         setArticle(data);
@@ -76,7 +99,7 @@ export default function ArticleDetail() {
         }
 
       } catch (e) {
-        console.error(e);
+        console.error("Erreur complète :", e);
         setError("Erreur de chargement");
       } finally {
         setLoading(false);
@@ -84,7 +107,7 @@ export default function ArticleDetail() {
     };
 
     fetchArticle();
-  }, [qrData]);
+  }, [qrData, manualId]);
 
   const qtyNumber = () => {
     const n = parseInt(quantity || "0", 10);

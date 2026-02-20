@@ -1,4 +1,4 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, TextInput } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, TextInput, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useCart } from "../../context/CartContext";
 import { MaterialIcons , MaterialCommunityIcons } from "@expo/vector-icons";
@@ -30,6 +30,9 @@ export default function CartScreen() {
   const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
   const [confirmTitle, setConfirmTitle] = useState("");
   const [confirmMessage, setConfirmMessage] = useState("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
 
   const openConfirmModal = (title: string, message: string, action: () => void) => {
     setConfirmTitle(title);
@@ -79,6 +82,33 @@ export default function CartScreen() {
         return;
     }
     setCheckoutModalVisible(true);
+  };
+
+  const handleSearch = async (text: string) => {
+    setSearchQuery(text);
+    if (text.length >= 2) {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("id, reference, designation")
+        .or(`reference.ilike.%${text}%,designation.ilike.%${text}%`)
+        .limit(10);
+      
+      if (!error && data) {
+        setSearchResults(data);
+      }
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const navigateToArticle = (item: any) => {
+    setSearchQuery(""); 
+    setSearchResults([]);
+    
+    router.push({
+      pathname: "/ArticleDetail",
+      params: { manualId: item.id } 
+    });
   };
 
   const loadPreviousOrders = async () => {
@@ -181,6 +211,35 @@ export default function CartScreen() {
             </TouchableOpacity>
         ) : null}
       </View>
+
+      <View style={styles.searchContainer}>
+        <MaterialIcons name="search" size={24} color="#999" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Rechercher une réf. ou désignation..."
+          value={searchQuery}
+          onChangeText={handleSearch}
+          placeholderTextColor="#999"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => { setSearchQuery(""); setSearchResults([]); }}>
+            <MaterialIcons name="close" size={24} color="#999" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {searchResults.length > 0 && (
+        <View style={styles.searchResultsContainer}>
+          <ScrollView keyboardShouldPersistTaps="handled">
+            {searchResults.map((item) => (
+              <TouchableOpacity key={item.id} style={styles.searchResultItem} onPress={() => navigateToArticle(item)}>
+                <Text style={styles.searchResultRef}>{item.reference}</Text>
+                <Text style={styles.searchResultDes} numberOfLines={1}>{item.designation}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       <View style={styles.listContainer}>
           {cart.length < 1 && (
@@ -599,5 +658,54 @@ const styles = StyleSheet.create({
   orderInfoText: { 
     fontSize: 14, 
     color: "#333" 
+  },
+
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: "#333",
+  },
+  searchResultsContainer: {
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    marginBottom: 15,
+    maxHeight: 250,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    zIndex: 10, 
+  },
+  searchResultItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  searchResultRef: {
+    fontWeight: "bold",
+    color: "#4A90E2",
+    fontSize: 16,
+  },
+  searchResultDes: {
+    color: "#666",
+    fontSize: 14,
+    marginTop: 4,
   },
 });
