@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import supabase from "../../lib/supabase";
 import { LineChart } from "react-native-chart-kit";
-import { MaterialIcons } from "@expo/vector-icons"; // Ajout
+import { MaterialIcons } from "@expo/vector-icons";
 
 const screenWidth = Dimensions.get("window").width - 40;
 
@@ -27,10 +27,8 @@ export default function UsersBack() {
   const [sortOption, setSortOption] = useState<"recent" | "alphabet" | "mostActive">("recent");
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
-  // --- NOUVEAU : Pagination graph connexions ---
   const [chartPage, setChartPage] = useState(0);
 
-  // ---------------- Fetch utilisateurs et logins ----------------
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -51,7 +49,6 @@ export default function UsersBack() {
 
   if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
 
-  // ---------------- Filtrage et tri ----------------
   let filteredUsers = users.filter((u) =>
     u.nom.toLowerCase().includes(searchName.toLowerCase())
   );
@@ -71,7 +68,6 @@ export default function UsersBack() {
     return 0;
   });
 
-  // ---------------- Statistiques (Pagination) ----------------
   const activeUsersByDay: Record<string, number> = {};
 
   loginData.forEach((login) => {
@@ -87,12 +83,10 @@ export default function UsersBack() {
   const allDates = Object.keys(activeUsersByDay).sort((a, b) => {
     const [dayA, monthA] = a.split("/").map(Number);
     const [dayB, monthB] = b.split("/").map(Number);
-    // Année fictive pour trier les jours/mois correctement
     return new Date(2025, monthA - 1, dayA).getTime() - new Date(2025, monthB - 1, dayB).getTime();
   });
   const allCounts = allDates.map((d) => activeUsersByDay[d]);
 
-  // Logique de limite (7 items)
   const LIMIT = 7;
   const endIndex = allDates.length - (chartPage * LIMIT);
   const startIndex = Math.max(0, endIndex - LIMIT);
@@ -103,7 +97,6 @@ export default function UsersBack() {
   const canGoOlder = startIndex > 0;
   const canGoNewer = chartPage > 0;
 
-  // ---------------- View commandes utilisateur ----------------
   const viewUserOrders = async (user: any) => {
     const { data, error } = await supabase
       .from("orders")
@@ -130,7 +123,6 @@ export default function UsersBack() {
           <>
             <Text style={styles.title}>👥 Gestion des utilisateurs</Text>
 
-            {/* Recherche */}
             <View style={styles.searchBar}>
               <TextInput
                 style={styles.searchInput}
@@ -141,7 +133,6 @@ export default function UsersBack() {
               />
             </View>
 
-            {/* Tri */}
             <View style={{ marginBottom: 15 }}>
               <Text style={{ fontWeight: "600", marginBottom: 5 }}>Trier les utilisateurs :</Text>
               <TouchableOpacity
@@ -190,10 +181,8 @@ export default function UsersBack() {
               )}
             </View>
 
-            {/* Statistiques avec Navigation */}
             <Text style={styles.subtitle}>📊 Connexions récentes</Text>
             <View style={styles.chartCard}>
-                {/* Header Navigation */}
                 <View style={styles.chartHeader}>
                     <TouchableOpacity 
                         disabled={!canGoOlder} 
@@ -263,7 +252,6 @@ export default function UsersBack() {
         contentContainerStyle={{ padding: 20 }}
       />
 
-      {/* Modal commandes utilisateur (inchangé) */}
       {modalVisible && (
         <Modal visible={modalVisible} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
@@ -319,30 +307,172 @@ const chartConfig = {
 };
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 10 },
-  subtitle: { fontSize: 18, fontWeight: "600", marginVertical: 10 },
-  chartCard: { backgroundColor: "#fff", padding: 15, borderRadius: 10, marginBottom: 20, shadowOpacity: 0.1, shadowRadius: 5 },
-  chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  userCard: { backgroundColor: "#fff", padding: 15, borderRadius: 10, marginBottom: 10, shadowOpacity: 0.1, shadowRadius: 3 },
-  bold: { fontWeight: "700", marginBottom: 5 },
-  actions: { flexDirection: "row", marginTop: 10 },
-  actionBtn: { backgroundColor: "#4A90E2", padding: 8, borderRadius: 6, marginRight: 10 },
-  actionText: { color: "#fff", fontWeight: "600" },
-  searchBar: { marginBottom: 15 },
-  searchInput: { backgroundColor: "#fff", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: "#ccc", fontSize: 16, color: "#000" },
-  dropdownBtn: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10 },
-  dropdownMenu: { position: "absolute", backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc", borderRadius: 8, width: "100%", marginTop: 45, zIndex: 1000 },
-  dropdownItem: { padding: 10 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 15 },
-  modalContent: { backgroundColor: "#fff", borderRadius: 16, padding: 15, maxHeight: "85%" },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  modalTitle: { fontSize: 20, fontWeight: "700" },
-  closeBtn: { fontSize: 20, color: "#E63946", fontWeight: "700" },
-  orderCard: { backgroundColor: "#f9f9f9", padding: 12, borderRadius: 10, marginBottom: 10, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 },
-  orderNumber: { fontWeight: "700", marginBottom: 4 },
-  orderDate: { fontSize: 14, color: "#555", marginBottom: 4 },
-  orderComment: { fontStyle: "italic", marginBottom: 6 },
-  orderItems: { marginTop: 6 },
-  itemsTitle: { fontWeight: "600", marginBottom: 2 },
-  itemText: { fontSize: 14, marginLeft: 6 },
+  title: { 
+    fontSize: 22, 
+    fontWeight: "700", 
+    marginBottom: 10 
+  },
+
+  subtitle: { 
+    fontSize: 18, 
+    fontWeight: "600", 
+    marginVertical: 10 
+  },
+
+  chartCard: { 
+    backgroundColor: "#fff", 
+    padding: 15, borderRadius: 10, 
+    marginBottom: 20, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 5 
+  },
+
+  chartHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 10 
+  },
+
+  userCard: { 
+    backgroundColor: "#fff", 
+    padding: 15, 
+    borderRadius: 10, 
+    marginBottom: 10, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 3 
+  },
+
+  bold: { 
+    fontWeight: "700", 
+    marginBottom: 5 
+  },
+
+  actions: { 
+    flexDirection: "row",
+    marginTop: 10 
+  },
+
+  actionBtn: { 
+    backgroundColor: "#4A90E2", 
+    padding: 8, 
+    borderRadius: 6, 
+    marginRight: 10 
+  },
+
+  actionText: { 
+    color: "#fff", 
+    fontWeight: "600" 
+  },
+
+  searchBar: { 
+    marginBottom: 15 
+  },
+
+  searchInput: { 
+    backgroundColor: "#fff", 
+    paddingVertical: 10, 
+    paddingHorizontal: 12, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: "#ccc", 
+    fontSize: 16, 
+    color: "#000" 
+  },
+
+  dropdownBtn: { 
+    backgroundColor: "#fff", 
+    borderWidth: 1, 
+    borderColor: "#ccc", 
+    borderRadius: 8, 
+    padding: 10 
+  },
+
+  dropdownMenu: { 
+    position: "absolute", 
+    backgroundColor: "#fff", 
+    borderWidth: 1, 
+    borderColor: "#ccc", 
+    borderRadius: 8, 
+    width: "100%", 
+    marginTop: 45, 
+    zIndex: 1000 
+  },
+
+  dropdownItem: {
+    padding: 10 
+  },
+
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: "rgba(0,0,0,0.5)", 
+    justifyContent: "center", 
+    padding: 15 
+  },
+
+  modalContent: { 
+    backgroundColor: "#fff", 
+    borderRadius: 16, 
+    padding: 15, 
+    maxHeight: "85%" 
+  },
+
+  modalHeader: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    marginBottom: 10 
+  },
+
+  modalTitle: { 
+    fontSize: 20, 
+    fontWeight: "700" 
+  },
+
+  closeBtn: { 
+    fontSize: 20, 
+    color: "#E63946", 
+    fontWeight: "700" 
+  },
+
+  orderCard: { 
+    backgroundColor: "#f9f9f9", 
+    padding: 12, 
+    borderRadius: 10, 
+    marginBottom: 10, 
+    shadowColor: "#000", 
+    shadowOpacity: 0.05, 
+    shadowRadius: 5, 
+    elevation: 2 
+  },
+
+  orderNumber: { 
+    fontWeight: "700", 
+    marginBottom: 4 
+  },
+
+  orderDate: { 
+    fontSize: 14, 
+    color: "#555", 
+    marginBottom: 4 
+  },
+
+  orderComment: { 
+    fontStyle: "italic",
+    marginBottom: 6 
+  },
+
+  orderItems: { 
+    marginTop: 6 
+  },
+
+  itemsTitle: { 
+    fontWeight: "600", 
+    marginBottom: 2 
+  },
+
+  itemText: { 
+    fontSize: 14, 
+    marginLeft: 6 
+  },
 });

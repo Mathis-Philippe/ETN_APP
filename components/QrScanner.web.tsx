@@ -9,25 +9,18 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // On garde une référence aux contrôles du scanner pour pouvoir l'arrêter proprement
   const controlsRef = useRef<IScannerControls | null>(null);
   const codeReader = useRef(new BrowserQRCodeReader());
 
-  // --- 1. DÉMARRAGE MANUEL DE LA CAMÉRA ---
   useEffect(() => {
     let activeStream: MediaStream | null = null;
     let isMounted = true;
 
     const startCamera = async () => {
       try {
-        // CORRECTION IMPORTANTE : 
-        // On ne définit PAS de width/height fixes (ex: 1280x720).
-        // Cela force souvent Android à cropper l'image, ce qui désactive l'autofocus matériel.
-        // On laisse le navigateur choisir la résolution native du capteur.
         const constraints: any = {
           video: { 
             facingMode: 'environment',
-            // On demande le focus continu standard dès le début
             focusMode: 'continuous' 
           }
         };
@@ -41,18 +34,13 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
 
         activeStream = stream;
 
-        // --- GESTION AVANCÉE DU FOCUS (Correctif Samsung/Android) ---
         const track = stream.getVideoTracks()[0];
         const capabilities = track.getCapabilities() as any;
         const settings = track.getSettings() as any;
 
-        // Si le focus continu est supporté par le matériel...
         if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-             // ... et qu'il n'est pas déjà actif
              if (settings.focusMode !== 'continuous') {
                  try {
-                    // On attend 500ms que le driver de la caméra se stabilise avant d'appliquer la contrainte.
-                    // C'est souvent ce changement immédiat qui rendait l'image floue après 1s.
                     await new Promise(r => setTimeout(r, 500));
                     
                     if (isMounted && track.readyState === 'live') {
@@ -68,7 +56,6 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          // On attend que la vidéo soit chargée pour lancer le scan
           videoRef.current.onloadedmetadata = () => {
              if (!isMounted) return;
              setLoading(false);
@@ -84,32 +71,27 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
 
     startCamera();
 
-    // NETTOYAGE À LA SORTIE DE L'ÉCRAN
     return () => {
       isMounted = false;
-      // 1. Arrêter le scanner ZXing
       if (controlsRef.current) {
         controlsRef.current.stop();
         controlsRef.current = null;
       }
-      // 2. Arrêter la caméra (éteindre la lumière verte)
       if (activeStream) {
         activeStream.getTracks().forEach(t => t.stop());
       }
     };
   }, []);
 
-  // --- 2. BOUCLE DE SCAN ---
   const startScanning = async () => {
     if (!videoRef.current) return;
     
     try {
-      // On lance le scan et on récupère les "controls" pour pouvoir stopper plus tard
       const controls = await codeReader.current.decodeFromVideoElement(
         videoRef.current, 
         (result, error, controls) => {
           if (result) {
-            controls.stop(); // Arrêt immédiat si trouvé
+            controls.stop();
             onScan(result.getText());
           }
         }
@@ -120,14 +102,12 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
     }
   };
 
-  // --- 3. GESTION PHOTO (FALLBACK) ---
   const handleFileChange = async (event: any) => {
     const file = event.target.files[0];
     if (!file) return;
 
     setAnalyzing(true);
     try {
-      // Priorité Natif (BarcodeDetector sur Android récent/Chrome)
       // @ts-ignore
       if ('BarcodeDetector' in window) {
         try {
@@ -138,7 +118,6 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
         } catch (e) {}
       }
       
-      // Fallback ZXing avec rotation de l'image
       const imgUrl = URL.createObjectURL(file);
       await processImageWithRotation(imgUrl);
       URL.revokeObjectURL(imgUrl);
@@ -155,7 +134,6 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
       const img = new Image();
       img.onload = async () => {
         try {
-          // Optimisation : On réduit la taille si l'image est géante (>1000px)
           const MAX_SIZE = 1000;
           let width = img.width;
           let height = img.height;
@@ -171,7 +149,6 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
           const ctx = canvas.getContext('2d', { willReadFrequently: true });
           if (!ctx) throw new Error("Canvas erreur");
 
-          // Test des 4 rotations pour être sûr de lire le code
           for (let angle of [0, 90, 180, 270]) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.save();
@@ -180,7 +157,6 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
             ctx.drawImage(img, -width / 2, -height / 2, width, height);
             ctx.restore();
             try {
-              // Note: decodeFromCanvas n'utilise pas de callback, il retourne une promesse
               const result = await codeReader.current.decodeFromCanvas(canvas);
               if (result) { onScan(result.getText()); resolve(); return; }
             } catch (e) {}
@@ -197,14 +173,13 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
 
   return (
     <View style={styles.container}>
-      {/* Video HTML brute */}
       <div style={{ width: '100%', height: '100%', position: 'absolute', overflow: 'hidden', backgroundColor: '#000' }}>
         <video
           ref={videoRef}
           style={{ 
             width: '100%', 
             height: '100%', 
-            objectFit: 'cover', // Remplit l'écran sans déformer
+            objectFit: 'cover',
           }}
           muted
           playsInline
@@ -231,7 +206,6 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
         <View style={styles.bottomControls}>
             <Text style={styles.hintText}>Si le scanner est flou :</Text>
             
-            {/* Input caché pour le fallback photo */}
             <input
                 ref={fileInputRef}
                 type="file"
@@ -241,7 +215,6 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
                 onChange={handleFileChange}
             />
             
-            {/* Bouton visible */}
             <View 
                 // @ts-ignore
                 onClick={triggerNativeCamera}
@@ -259,7 +232,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    // @ts-ignore
     height: Platform.OS === 'web' ? '100vh' : '100%',
     width: '100%',
     position: 'relative',

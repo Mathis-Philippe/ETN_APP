@@ -18,7 +18,6 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// --- POST : envoyer le PDF par mail ---
 app.post('/send-order-pdf', async (req, res) => {
   try {
     const payload = req.body;
@@ -33,12 +32,11 @@ app.post('/send-order-pdf', async (req, res) => {
       .single();
     if (clientError || !clientData) throw clientError || new Error('Client introuvable');
 
-    // AJOUT : Construction du nom complet
     const contactName = `${payload.firstName || ''} ${payload.lastName || ''}`.trim();
 
     const pdfData = {
       clientName: clientData.nom,
-      clientContact: contactName, // PASSAGE DU CONTACT AU PDF
+      clientContact: contactName,
       clientAddress: clientData.adresse,
       clientCode: clientData.code_postal,
       clientVille: clientData.ville,
@@ -58,7 +56,6 @@ app.post('/send-order-pdf', async (req, res) => {
     await sendOrderEmail({
       to: "etn@equipement-technique-du-nord.fr",
       subject: `Nouvelle Commande #${payload.orderNumber} - ${clientData.nom}`,
-      // Ajout du nom du contact dans le corps du mail
       text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par ${clientData.nom} (Contact : ${contactName}).\n\nVous trouverez le bon de commande en pièce jointe.`,
       attachments: [
         {
@@ -75,13 +72,10 @@ app.post('/send-order-pdf', async (req, res) => {
   }
 });
 
-// --- GET : Visualisation PDF (Route utilisée par l'app) ---
 app.get("/pdf-proxy/:orderNumber", async (req, res) => {
   try {
-    // FIX : On décode pour éviter les erreurs si le numéro contient des espaces (CMD%20123)
     const orderNumber = decodeURIComponent(req.params.orderNumber as string);
 
-    // On récupère la commande AVEC nom/prénom enregistrés
     const { data: order, error } = await supabase
       .from("orders")
       .select("*")
@@ -99,17 +93,16 @@ app.get("/pdf-proxy/:orderNumber", async (req, res) => {
       .eq("code_client", order.client_id)
       .single();
 
-    // Reconstitution du contact depuis la commande stockée
     const contactName = `${order.first_name || ''} ${order.last_name || ''}`.trim();
 
     const pdfBuffer = await generateOrderPdf({
       clientName: client?.nom || "",
-      clientContact: contactName, // AJOUT ICI AUSSI
+      clientContact: contactName,
       clientAddress: client?.adresse || "",
       clientCode: client?.code_postal || "",
       clientVille: client?.ville || "",
       orderNumber: orderNumber,
-      comment: order.comment || "", // On passe aussi le commentaire stocké
+      comment: order.comment || "",
       cart: order.items.products.map((p: any) => ({
         reference: p.code,
         designation: p.designation,
@@ -130,10 +123,7 @@ app.get("/pdf-proxy/:orderNumber", async (req, res) => {
   }
 });
 
-// Route legacy (si utilisée ailleurs) - mise à jour aussi par précaution
 app.get("/order-pdf/:orderNumber", async (req, res) => {
-    // Redirection logique vers la même fonction que proxy
-    // (J'ai dupliqué le code pour éviter de casser si vous utilisez les deux)
     try {
       const orderNumber = decodeURIComponent(req.params.orderNumber as string);
       const { data: order, error } = await supabase.from("orders").select("*").eq("order_number", orderNumber).single();

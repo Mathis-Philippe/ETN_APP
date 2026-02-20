@@ -13,7 +13,6 @@ import { useAuth } from "../../context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-// 1. MISE À JOUR DU TYPE : L'objet de jointure est maintenant nommé 'clients'
 type Order = {
   id: string;
   client_id: string;
@@ -21,7 +20,7 @@ type Order = {
   last_name: string;
   order_number: string;
   created_at: string;
-  clients: { // Nom de la table étrangère = clients
+  clients: {
     nom: string; 
   } | null;
 };
@@ -39,10 +38,8 @@ const AdminCommandesScreen: React.FC = () => {
 
       setLoading(true);
       
-      // 2. CORRECTION DE LA REQUÊTE : Utilise la syntaxe standard "table_cible(colonnes)"
       const { data, error } = await supabase
         .from("orders")
-        // Jointure standard sur 'clients' pour récupérer le champ 'nom'
         .select(`
           *,
           clients (nom) 
@@ -62,10 +59,8 @@ const AdminCommandesScreen: React.FC = () => {
     }
   }, [isAdmin]);
 
-  // 3. MISE À JOUR DU FILTRAGE (utilise order.clients?.nom)
   const filteredOrders = orders.filter(order => {
     const term = searchTerm.toLowerCase();
-    // Utilise order.clients.nom pour le nom de la société
     const companyName = order.clients?.nom?.toLowerCase() || ''; 
 
     return (
@@ -93,7 +88,6 @@ const AdminCommandesScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* ... (Header et SearchInput inchangés) ... */}
       <View style={styles.header}>
         <Text style={styles.title}>Tableau de Bord Commandes</Text>
       </View>
@@ -143,7 +137,6 @@ const AdminCommandesScreen: React.FC = () => {
                 <View style={styles.divider} />
 
                 <View style={styles.orderDetails}>
-                  {/* Affichage du nom de la société via la jointure */}
                   <View style={styles.detailRow}>
                     <Text style={styles.label}>Société</Text>
                     <Text style={styles.value}>{item.clients?.nom || 'N/A'}</Text>
@@ -175,13 +168,44 @@ const AdminCommandesScreen: React.FC = () => {
 export default AdminCommandesScreen;
 
 const styles = StyleSheet.create({
-  // ... (Styles inchangés) ...
-  container: { flex: 1, backgroundColor: "#F8FAFC", paddingTop: 20 },
-  header: { alignItems: "center", marginBottom: 20, paddingHorizontal: 20 },
-  title: { fontSize: 28, fontWeight: "700", color: "#1E293B" },
-  listContent: { paddingHorizontal: 20, paddingBottom: 20 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFC" },
-  emptyText: { fontSize: 16, color: "#64748B", fontWeight: "500", textAlign: 'center', marginTop: 30 },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#F8FAFC", 
+    paddingTop: 20 
+  },
+
+  header: { 
+    alignItems: "center", 
+    marginBottom: 20, 
+    paddingHorizontal: 20 
+  },
+
+  title: { 
+    fontSize: 28, 
+    fontWeight: "700", 
+    color: "#1E293B" 
+  },
+
+  listContent: { 
+    paddingHorizontal: 20, 
+    paddingBottom: 20 
+  },
+
+  centered: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    backgroundColor: "#F8FAFC" 
+  },
+
+  emptyText: { 
+    fontSize: 16, 
+    color: "#64748B", 
+    fontWeight: "500", 
+    textAlign: 'center',
+    marginTop: 30 
+  },
+
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -216,13 +240,57 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
-  orderHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-  orderNumberBadge: { backgroundColor: "#EEF2FF", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  orderNumberText: { fontSize: 16, fontWeight: "700", color: "#6d88ff" },
-  dateText: { fontSize: 14, color: "#64748B", fontWeight: "500" },
-  divider: { height: 1, backgroundColor: "#E2E8F0", marginBottom: 16 },
-  orderDetails: { gap: 12 },
-  detailRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  label: { fontSize: 14, color: "#64748B", fontWeight: "500" },
-  value: { fontSize: 15, color: "#1E293B", fontWeight: "600" },
+  orderHeader: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    marginBottom: 16 
+  },
+
+  orderNumberBadge: { 
+    backgroundColor: "#EEF2FF", 
+    paddingHorizontal: 16, 
+    paddingVertical: 8, 
+    borderRadius: 20 
+  },
+
+  orderNumberText: { 
+    fontSize: 16, 
+    fontWeight: "700", 
+    color: "#6d88ff" 
+  },
+
+  dateText: { 
+    fontSize: 14, 
+    color: "#64748B", 
+    fontWeight: "500" 
+  },
+
+  divider: { 
+    height: 1, 
+    backgroundColor: "#E2E8F0", 
+    marginBottom: 16 
+  },
+
+  orderDetails: { 
+    gap: 12 
+  },
+
+  detailRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center" 
+  },
+
+  label: { 
+    fontSize: 14, 
+    color: "#64748B", 
+    fontWeight: "500" 
+  },
+
+  value: { 
+    fontSize: 15, 
+    color: "#1E293B", 
+    fontWeight: "600" 
+  }
 });

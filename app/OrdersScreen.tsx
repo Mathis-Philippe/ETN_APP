@@ -18,7 +18,7 @@ type Order = {
   first_name: string;
   last_name: string;
   order_number: string;
-  created_at: string; // timestamptz
+  created_at: string;
 };
 
 const OrdersScreen: React.FC = () => {
@@ -75,7 +75,6 @@ const OrdersScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header avec bouton back */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <MaterialIcons name="arrow-back" size={28} color="#1E293B" />
@@ -83,7 +82,6 @@ const OrdersScreen: React.FC = () => {
         <Text style={styles.title}>Mes Commandes</Text>
       </View>
 
-      {/* Liste des commandes */}
       <FlatList
         data={orders}
         keyExtractor={(item) => item.id}

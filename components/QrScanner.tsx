@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from "react-native";
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from "expo-camera";
-import { Ionicons } from "@expo/vector-icons"; // Assure-toi d'avoir les icônes
+import { Ionicons } from "@expo/vector-icons";
 
 type Props = {
   onScan: (data: string) => void;
@@ -39,11 +39,10 @@ export default function QrScanner({ onScan }: Props) {
     setTimeout(() => setScanned(false), 2000); 
   };
 
-  // Gestion du Zoom
   const handleZoom = (factor: number) => {
     let newZoom = zoom + factor;
     if (newZoom < 0) newZoom = 0;
-    if (newZoom > 1) newZoom = 1; // Le zoom max est 1 (100% du zoom digital supporté)
+    if (newZoom > 1) newZoom = 1;
     setZoom(newZoom);
   };
 
@@ -55,15 +54,13 @@ export default function QrScanner({ onScan }: Props) {
         onBarcodeScanned={handleBarcodeScanned}
         enableTorch={false}
         ratio="16:9"
-        autofocus="on" // 👈 CRUCIAL pour Android
-        zoom={0.1}    // 👈 Gestion du zoom
+        autofocus="on"
+        zoom={0.1}
         responsiveOrientationWhenOrientationLocked
       >
-        {/* Overlay pour guider l'utilisateur */}
         <View style={styles.overlay}>
           <View style={styles.controls}>
             
-            {/* Contrôles de Zoom */}
             <View style={styles.zoomContainer}>
               <TouchableOpacity onPress={() => handleZoom(-0.1)} style={styles.zoomBtn}>
                 <Ionicons name="remove-circle-outline" size={32} color="white" />
@@ -74,7 +71,6 @@ export default function QrScanner({ onScan }: Props) {
               </TouchableOpacity>
             </View>
 
-            {/* Bouton pour changer de caméra (Flip) */}
             <TouchableOpacity 
               style={styles.flipBtn}
               onPress={() => setFacing(current => (current === "back" ? "front" : "back"))}
@@ -99,7 +95,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "transparent",
-    justifyContent: "flex-end", // Contrôles en bas
+    justifyContent: "flex-end",
     paddingBottom: 40,
   },
   controls: {

@@ -1,8 +1,7 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import { type PropsWithChildren } from 'react';
 
-// Ce fichier configure le HTML racine pour le Web uniquement.
-// Il garantit que les icônes sont visibles par le robot d'Apple immédiatement.
+
 export default function Root({ children }: PropsWithChildren) {
   return (
     <html lang="fr">
@@ -10,16 +9,10 @@ export default function Root({ children }: PropsWithChildren) {
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         
-        {/* --- MODIFICATION ICI --- */}
-        {/* On bloque le zoom utilisateur et le scale automatique pour un feeling "App Native" */}
         <meta 
           name="viewport" 
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no" 
         />
-        {/* ------------------------ */}
-
-        {/* --- DÉBUT CONFIGURATION PWA --- */}
-        {/* Indispensable pour iOS : Lien direct statique */}
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         
         <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png" />

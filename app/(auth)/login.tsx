@@ -22,8 +22,6 @@ export default function LoginScreen() {
   const [cameraVisible, setCameraVisible] = useState(false);
   const [scanned, setScanned] = useState(false);
   
-  // --- NOUVEAU : État pour afficher/masquer le login manuel ---
-  // Par défaut c'est caché (false), donc le client ne voit rien.
   const [showManual, setShowManual] = useState(false);
 
   const [manualCode, setManualCode] = useState("");
@@ -94,7 +92,6 @@ export default function LoginScreen() {
           Espace Client
         </Text>
 
-        {/* Bouton scanner (Principal - Toujours visible) */}
         <TouchableOpacity
           style={styles.scanButton}
           onPress={() => {
@@ -105,7 +102,6 @@ export default function LoginScreen() {
           <Text style={styles.scanButtonText}>Scanner mon QR Code</Text>
         </TouchableOpacity>
 
-        {/* --- SECTION LOGIN MANUEL (CACHÉE PAR DÉFAUT) --- */}
         {showManual && (
           <View style={styles.manualLoginContainer}>
             <View style={styles.divider}>
@@ -146,7 +142,6 @@ export default function LoginScreen() {
           </View>
         )}
 
-        {/* BOUTON DISCRET POUR AFFICHER/MASQUER */}
         <TouchableOpacity 
             onPress={() => setShowManual(!showManual)} 
             style={styles.toggleButton}
@@ -157,7 +152,6 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
 
-        {/* Caméra Modal */}
         <Modal visible={cameraVisible} animationType="slide">
           <QrScanner onScan={handleScan} />
           <View style={styles.closeWrapper}>
@@ -182,9 +176,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
-  logo: { width: 140, height: 140, resizeMode: "contain", marginBottom: 20 },
-  title: { fontSize: 26, fontWeight: "800", color: "#1E293B", textAlign: "center", marginBottom: 8 },
-  subtitle: { fontSize: 16, color: "#64748B", textAlign: "center", marginBottom: 30 },
+  logo: { 
+    width: 140, 
+    height: 140, 
+    resizeMode: "contain", 
+    marginBottom: 20 
+  },
+
+  title: { 
+    fontSize: 26, 
+    fontWeight: "800", 
+    color: "#1E293B", 
+    textAlign: "center", 
+    marginBottom: 8 
+  },
+
+  subtitle: { 
+    fontSize: 16, 
+    color: "#64748B", 
+    textAlign: "center", 
+    marginBottom: 30 
+  },
   
   scanButton: {
     backgroundColor: "#2563EB",
@@ -199,15 +211,40 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 300,
     alignItems: "center",
-    marginBottom: 20, // Espace ajouté
+    marginBottom: 20,
   },
-  scanButtonText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  scanButtonText: { 
+    color: "#fff", 
+    fontSize: 18, 
+    fontWeight: "700" 
+  },
 
-  /* Styles Login Manuel */
-  manualLoginContainer: { width: "100%", maxWidth: 300, marginTop: 10, alignItems: "center" },
-  divider: { flexDirection: "row", alignItems: "center", width: "100%", marginBottom: 15 },
-  line: { flex: 1, height: 1, backgroundColor: "#cbd5e1" },
-  orText: { marginHorizontal: 10, color: "#94a3b8", fontWeight: "600", fontSize: 12 },
+  manualLoginContainer: { 
+    width: "100%", 
+    maxWidth: 300, 
+    marginTop: 10, 
+    alignItems: "center" 
+  },
+
+  divider: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    width: "100%", 
+    marginBottom: 15 
+  },
+
+  line: { 
+    flex: 1, 
+    height: 1, 
+    backgroundColor: "#cbd5e1" 
+  },
+
+  orText: { 
+    marginHorizontal: 10, 
+    color: "#94a3b8", 
+    fontWeight: "600", 
+    fontSize: 12 
+  },
   
   input: {
     width: "100%",
@@ -231,19 +268,32 @@ const styles = StyleSheet.create({
   },
   manualButtonText: { color: "#2563EB", fontWeight: "700", fontSize: 16 },
 
-  /* Bouton Discret (Toggle) */
   toggleButton: {
     marginTop: 30,
     padding: 10,
   },
   toggleButtonText: {
-    color: "#94a3b8", // Gris clair discret
+    color: "#94a3b8",
     fontSize: 14,
     textDecorationLine: "underline",
   },
 
-  /* Caméra Overlay */
-  closeWrapper: { position: "absolute", bottom: 40, alignSelf: "center" },
-  closeButton: { backgroundColor: "#DC2626", paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8 },
-  closeButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  closeWrapper: { 
+    position: "absolute", 
+    bottom: 40, 
+    alignSelf: "center" 
+  },
+
+  closeButton: { 
+    backgroundColor: "#DC2626", 
+    paddingVertical: 12, 
+    paddingHorizontal: 24, 
+    borderRadius: 8 
+  },
+
+  closeButtonText: { 
+    color: "#fff", 
+    fontWeight: "600", 
+    fontSize: 16 
+  }
 });

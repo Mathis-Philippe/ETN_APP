@@ -1,28 +1,24 @@
 import { Tabs, Redirect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, TouchableOpacity, Alert, Platform } from "react-native"; // <--- Ajout de Platform
+import { Image, TouchableOpacity, Alert, Platform } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 
 export default function BackLayout() {
   const { isLoggedIn, isAdmin, logout } = useAuth();
   const router = useRouter();
 
-  // 🔐 Sécurité : si non admin, on renvoie à l’accueil
   if (!isLoggedIn || !isAdmin) {
     return <Redirect href="/(tabs)" />;
   }
 
-  // Fonction de déconnexion
   const handleLogout = () => {
-    // Gestion spécifique pour le Web (PC)
     if (Platform.OS === 'web') {
       const confirm = window.confirm("Voulez-vous vraiment vous déconnecter ?");
       if (confirm) {
-        logout(); // On ne met pas await ici car logout est souvent synchrone ou géré vite, mais tu peux le mettre async si besoin
+        logout();
         router.replace("/");
       }
     } else {
-      // Gestion Mobile (iOS / Android)
       Alert.alert(
         "Déconnexion",
         "Voulez-vous vraiment vous déconnecter ?",
@@ -68,7 +64,6 @@ export default function BackLayout() {
             style={{ width: 120, height: 100, resizeMode: "contain" }}
           />
         ),
-        // --- BOUTON DÉCONNEXION ---
         headerRight: () => (
           <TouchableOpacity onPress={handleLogout} style={{ marginRight: 20 }}>
             <Ionicons name="log-out-outline" size={28} color="#E63946" />

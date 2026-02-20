@@ -1,11 +1,9 @@
-// service-worker.js
 const CACHE_NAME = 'etn-pwa-cache-v1';
 const urlsToCache = [
   '/', 
   '/index.html',
   '/manifest.json',
   '/assets/images/favicon.png',
-  // Ajoutez le chemin de votre logo principal si nécessaire :
   '/assets/images/etn.png', 
 ];
 

@@ -33,9 +33,8 @@ function RootNavigator() {
     }
 
     router.replace("/(tabs)" as any);
-  }, [isLoggedIn, isAdmin, router, mounted, isLoading]); // <--- isLoading ajouté aux dépendances
+  }, [isLoggedIn, isAdmin, router, mounted, isLoading]);
 
-  // Optionnel : Retourner null (écran vide) tant que ça charge évite le "flash"
   if (isLoading) return null; 
 
   return null;
@@ -45,7 +44,6 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <CartProvider>
-        {/* --- DÉBUT MODIFICATION PWA --- */}
         <Head>
           <title>ETN App</title>
           <meta name="description" content="Application ETN" />
@@ -67,10 +65,8 @@ export default function RootLayout() {
           <Stack.Screen name="(back)" />
         </Stack>
 
-        {/* Gestion des redirections */}
         <RootNavigator />
 
-        {/* Toast global */}
         <Toast />
       </CartProvider>
     </AuthProvider>

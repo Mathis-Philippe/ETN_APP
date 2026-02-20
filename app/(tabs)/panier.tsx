@@ -26,7 +26,6 @@ export default function CartScreen() {
   const [selectOrderModalVisible, setSelectOrderModalVisible] = useState(false);
   const [previousOrders, setPreviousOrders] = useState<any[]>([]);
 
-  // États confirmation
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
   const [confirmTitle, setConfirmTitle] = useState("");
@@ -50,7 +49,6 @@ export default function CartScreen() {
     setConfirmAction(null);
   };
 
-  // --- Fonctions Panier ---
   const handleRemove = (id: string) => {
     openConfirmModal("Supprimer l'article", "Voulez-vous vraiment supprimer cet article ?", () => removeFromCart(id));
   };
@@ -175,7 +173,6 @@ export default function CartScreen() {
   return (
     <View style={styles.container}>
 
-      {/* Header Panier : Titre ou Bouton Vider */}
       <View style={styles.headerContainer}>
         {cart.length > 0 ? (
             <TouchableOpacity style={styles.clearButton} onPress={handleClearCart}>
@@ -185,7 +182,6 @@ export default function CartScreen() {
         ) : null}
       </View>
 
-      {/* Contenu principal (Liste) */}
       <View style={styles.listContainer}>
           {cart.length < 1 && (
             <View style={styles.emptyContainer}>
@@ -197,7 +193,6 @@ export default function CartScreen() {
           <FlatList
             data={cart}
             keyExtractor={(item) => item.id}
-            // On laisse de l'espace en bas pour que le dernier item ne soit pas caché par le footer fixe
             contentContainerStyle={{ paddingBottom: 200, paddingTop: 10 }}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => openEditModal(item)}>
@@ -214,11 +209,8 @@ export default function CartScreen() {
           />
       </View>
 
-      {/* --- ZONE BOUTONS FIXES (BAS DE PAGE) --- */}
-      {/* Position absolute pour garantir l'affichage par dessus tout */}
       <View style={styles.footerButtons}>
         
-        {/* Bouton Scanner (Toujours visible) */}
         <TouchableOpacity 
             style={styles.scanMoreButton} 
             onPress={() => router.push("/(tabs)?autostart=true")}
@@ -227,14 +219,12 @@ export default function CartScreen() {
             <Text style={styles.scanMoreText}>Scanner un article</Text>
         </TouchableOpacity>
 
-        {/* Bouton Historique */}
         {previousOrders.length > 0 && (
             <TouchableOpacity style={styles.reloadButton} onPress={async () => { await loadPreviousOrders(); setSelectOrderModalVisible(true); }}>
             <Text style={styles.reloadText}>Historique commandes</Text>
             </TouchableOpacity>
         )}
 
-        {/* Bouton Valider (Seulement si articles) */}
         {cart.length > 0 && (
             <TouchableOpacity style={styles.checkoutButton} onPress={handleOpenCheckout} disabled={isSubmitting}>
             <Text style={styles.checkoutText}>
@@ -244,8 +234,6 @@ export default function CartScreen() {
         )}
       </View>
 
-
-      {/* --- MODAL DE SÉLECTION DE COMMANDE --- */}
       <Modal visible={selectOrderModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainerLarge}>
@@ -283,7 +271,6 @@ export default function CartScreen() {
         </View>
       </Modal>
 
-      {/* Modal Quantité */}
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -299,7 +286,6 @@ export default function CartScreen() {
         </View>
       </Modal>
 
-      {/* Modal Checkout */}
       <Modal visible={checkoutModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -319,7 +305,6 @@ export default function CartScreen() {
         </View>
       </Modal>
 
-      {/* Modal Confirmation */}
       <Modal visible={confirmModalVisible} transparent animationType="fade">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -340,21 +325,73 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7F9FC" },
-  headerContainer: { paddingHorizontal: 20, paddingTop: 20 },
-  listContainer: { flex: 1, paddingHorizontal: 20 },
-  
-  clearButton: { flexDirection:'row', backgroundColor: "#E63946", padding: 8, paddingHorizontal:12, borderRadius: 20, alignSelf: "flex-end", marginBottom: 5, alignItems:'center' },
-  
-  emptyContainer: { alignItems:'center', justifyContent:'center', marginTop: 100 },
-  noArticleText: { fontSize: 18, color: "#999", marginTop: 10, fontWeight:'500' },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#F7F9FC" 
+  },
 
-  item: { backgroundColor: "#fff", padding: 15, borderRadius: 12, marginBottom: 12, shadowColor:'#000', shadowOpacity:0.05, shadowRadius:5, elevation:2 },
-  title: { fontSize: 16, fontWeight: "600", color:'#333' },
-  subtitle: { color: "#666", fontSize:14 },
-  remove: { color: "#E63946", fontWeight:'600', fontSize:14 },
+  headerContainer: { 
+    paddingHorizontal: 20, 
+    paddingTop: 20 
+  },
 
-  // Footer Actions (Sticky Bottom via absolute)
+  listContainer: { 
+    flex: 1, 
+    paddingHorizontal: 20 
+  },
+  
+  clearButton: { 
+    flexDirection:'row', 
+    backgroundColor: "#E63946", 
+    padding: 8, 
+    paddingHorizontal:12, 
+    borderRadius: 20, 
+    alignSelf: "flex-end", 
+    marginBottom: 5, 
+    alignItems:'center' 
+  },
+  
+  emptyContainer: { 
+    alignItems:'center', 
+    justifyContent:'center',
+    marginTop: 100 
+  },
+
+  noArticleText: { 
+    fontSize: 18, 
+    color: "#999", 
+    marginTop: 10, 
+    fontWeight:'500' 
+  },
+
+  item: { 
+    backgroundColor: "#fff", 
+    padding: 15, 
+    borderRadius: 12, 
+    marginBottom: 12, 
+    shadowColor:'#000', 
+    shadowOpacity:0.05, 
+    shadowRadius:5, 
+    elevation:2 
+  },
+
+  title: { 
+    fontSize: 16, 
+    fontWeight: "600", 
+    color:'#333' 
+  },
+
+  subtitle: { 
+    color: "#666", 
+    fontSize:14 
+  },
+
+  remove: { 
+    color: "#E63946", 
+    fontWeight:'600', 
+    fontSize:14 
+  },
+
   footerButtons: { 
     position: 'absolute', 
     bottom: 0, 
@@ -372,42 +409,195 @@ const styles = StyleSheet.create({
   },
   
   scanMoreButton: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    padding: 14, backgroundColor: "#fff", borderWidth: 1, borderColor: "#4A90E2", borderRadius: 12, marginBottom: 10,
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "center",
+    padding: 14, 
+    backgroundColor: "#fff", 
+    borderWidth: 1, 
+    borderColor: "#4A90E2", 
+    borderRadius: 12, 
+    marginBottom: 10,
   },
-  scanMoreText: { color: "#4A90E2", fontSize: 16, fontWeight: "600", marginLeft: 8 },
 
-  reloadButton: { padding: 14, backgroundColor: "#E9EDF5", borderRadius: 12, alignItems: "center", marginBottom: 10 },
-  reloadText: { color: "#333", fontWeight: "600", fontSize:16 },
+  scanMoreText: { 
+    color: "#4A90E2", 
+    fontSize: 16, 
+    fontWeight: "600", 
+    marginLeft: 8 
+  },
 
-  checkoutButton: { backgroundColor: "#4A90E2", padding: 16, borderRadius: 12, alignItems: "center" },
-  checkoutText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  reloadButton: { 
+    padding: 14, 
+    backgroundColor: "#E9EDF5", 
+    borderRadius: 12, 
+    alignItems: "center", 
+    marginBottom: 10 
+  },
 
-  // Modals
-  modalContainer: { flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 20 },
-  modalContent: { backgroundColor: "#fff", borderRadius: 16, padding: 20 },
-  modalTitleOld: { fontSize: 20, fontWeight: "700", marginBottom: 15, textAlign:'center' },
-  input: { borderWidth: 1, borderColor: "#DDD", padding: 12, borderRadius: 8, marginBottom: 12, fontSize:16, backgroundColor:'#FAFAFA' },
+  reloadText: { 
+    color: "#333", 
+    fontWeight: "600", 
+    fontSize:16 
+  },
+
+  checkoutButton: { 
+    backgroundColor: "#4A90E2", 
+    padding: 16, 
+    borderRadius: 12, 
+    alignItems: "center" 
+  },
+
+  checkoutText: { 
+    color: "#fff", 
+    fontSize: 18, 
+    fontWeight: "700" 
+  },
+
+  modalContainer: { 
+    flex: 1, 
+    justifyContent: "center", 
+    backgroundColor: "rgba(0,0,0,0.5)", 
+    padding: 20 
+  },
+
+  modalContent: { 
+    backgroundColor: "#fff", 
+    borderRadius: 16, 
+    padding: 20 
+  },
+
+  modalTitleOld: { 
+    fontSize: 20, 
+    fontWeight: "700", 
+    marginBottom: 15, 
+    textAlign:'center' 
+  },
+
+  input: { 
+    borderWidth: 1, 
+    borderColor: "#DDD", 
+    padding: 12, 
+    borderRadius: 8, 
+    marginBottom: 12, 
+    fontSize:16, 
+    backgroundColor:'#FAFAFA' 
+  },
   
-  saveButton: { backgroundColor: "#10B981", padding: 14, borderRadius: 10, alignItems: "center", marginTop: 5 },
-  saveText: { color: "#fff", fontWeight: "700", fontSize:16 },
-  cancelButton: { backgroundColor: "#94A3B8", padding: 14, borderRadius: 10, alignItems: "center", marginTop: 10 },
-  cancelText: { color: "#fff", fontWeight: "700", fontSize:16 },
-  confirmMessage: { fontSize: 16, color: "#555", marginBottom: 20, textAlign: "center" },
+  saveButton: { 
+    backgroundColor: "#10B981", 
+    padding: 14, 
+    borderRadius: 10, 
+    alignItems: "center", 
+    marginTop: 5 
+  },
 
-  // Large Modal (Historique)
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  modalContainerLarge: { backgroundColor: "#F7F9FC", borderTopLeftRadius: 24, borderTopRightRadius: 24, height: "80%", padding: 20 },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  modalTitle: { fontSize: 22, fontWeight: "700", color: "#1E293B" },
-  modalSubtitle: { fontSize: 14, color: "#64748B", marginBottom: 15 },
-  closeIconButton: { padding: 5, backgroundColor: "#E2E8F0", borderRadius: 20 },
+  saveText: { 
+    color: "#fff", 
+    fontWeight: "700", 
+    fontSize:16 
+  },
+
+  cancelButton: { 
+    backgroundColor: "#94A3B8", 
+    padding: 14, 
+    borderRadius: 10, 
+    alignItems: "center", 
+    marginTop: 10 
+  },
+
+  cancelText: { 
+    color: "#fff", 
+    fontWeight: "700", 
+    fontSize:16 
+  },
+
+  confirmMessage: { 
+    fontSize: 16, 
+    color: "#555", 
+    marginBottom: 20, 
+    textAlign: "center" 
+  },
+
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: "rgba(0,0,0,0.5)", 
+    justifyContent: "flex-end" 
+  },
+
+  modalContainerLarge: { 
+    backgroundColor: "#F7F9FC", 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    height: "80%", 
+    padding: 20 
+  },
+
+  modalHeader: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    marginBottom: 10 
+  },
+
+  modalTitle: { 
+    fontSize: 22, 
+    fontWeight: "700", 
+    color: "#1E293B" 
+  },
+
+  modalSubtitle: { 
+    fontSize: 14, 
+    color: "#64748B", 
+    marginBottom: 15 
+  },
+
+  closeIconButton: { 
+    padding: 5, 
+    backgroundColor: "#E2E8F0", 
+    borderRadius: 20 
+  },
   
-  orderCard: { backgroundColor: "#fff", borderRadius: 12, padding: 15, marginBottom: 10, borderWidth: 1, borderColor: "#eee" },
-  orderCardHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  orderNumberContainer: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  orderNumberText: { color: "#4A90E2", fontWeight: "700" },
-  orderDateText: { color: "#94A3B8", fontSize: 12 },
-  orderCardBody: { flexDirection:'row', justifyContent:'space-between', alignItems:'center' },
-  orderInfoText: { fontSize: 14, color: "#333" },
+  orderCard: { 
+    backgroundColor: "#fff", 
+    borderRadius: 12, 
+    padding: 15, 
+    marginBottom: 10, 
+    borderWidth: 1, 
+    borderColor: "#eee" 
+  },
+
+  orderCardHeader: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    marginBottom: 8 
+  },
+
+  orderNumberContainer: { 
+    backgroundColor: "#EFF6FF", 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 6 
+  },
+
+  orderNumberText: { 
+    color: "#4A90E2", 
+    fontWeight: "700" 
+  },
+
+  orderDateText: { 
+    color: "#94A3B8", 
+    fontSize: 12 
+  },
+
+  orderCardBody: { 
+    flexDirection:'row', 
+    justifyContent:'space-between', 
+    alignItems:'center' 
+  },
+
+  orderInfoText: { 
+    fontSize: 14, 
+    color: "#333" 
+  },
 });

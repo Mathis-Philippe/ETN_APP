@@ -33,7 +33,6 @@ export default function HomeScreen() {
 
     if (reference) {
       setScanning(false);
-      // 👇 Redirection simple vers la page détail qui gère tout
       router.push({ pathname: "/ArticleDetail", params: { qrData: data } });
     } else if (codeClient) {
       setScanning(false);
@@ -65,7 +64,6 @@ export default function HomeScreen() {
     );
   }
 
-  // --- MODE SCANNER ---
   if (scanning) {
     return (
       <View style={styles.scannerContainer}>
@@ -83,7 +81,6 @@ export default function HomeScreen() {
     );
   }
 
-  // --- MODE ACCUEIL ---
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -109,21 +106,81 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 },
-  scannerContainer: { flex: 1, backgroundColor: "#000" },
-  welcomeTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 20, textAlign: "center", color: "#333" },
-  clientName: { color: "#1e90ff" },
-  instructionText: { fontSize: 16, color: "#666", textAlign: "center", marginBottom: 40, lineHeight: 22 },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#fff", 
+    justifyContent: "center", 
+    alignItems: "center", 
+    paddingHorizontal: 20 
+  },
+
+  scannerContainer: { 
+    flex: 1, 
+    backgroundColor: "#000"
+  },
+
+  welcomeTitle: { 
+    fontSize: 22, 
+    fontWeight: "bold", 
+    marginBottom: 20, 
+    textAlign: "center", 
+    color: "#333" 
+  },
+
+  clientName: { 
+    color: "#1e90ff" 
+  },
+
+  instructionText: { 
+    fontSize: 16, 
+    color: "#666", 
+    textAlign: "center", 
+    marginBottom: 40, 
+    lineHeight: 22 
+  },
+
   scanButton: {
-    backgroundColor: "#1e90ff", paddingVertical: 18, paddingHorizontal: 32, borderRadius: 16,
-    shadowColor: "#1e90ff", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 10,
-    elevation: 6, flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: "#1e90ff", 
+    paddingVertical: 18, 
+    paddingHorizontal: 32, 
+    borderRadius: 16,
+    shadowColor: "#1e90ff", 
+    shadowOffset: { 
+      width: 0, 
+      height: 8 
+    }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 10,
+    elevation: 6, 
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 12,
   },
-  scanText: { color: "#fff", fontSize: 17, fontWeight: "600" },
+
+  scanText: { 
+    color: "#fff", 
+    fontSize: 17, 
+    fontWeight: "600" 
+  },
+
   closeButton: {
-    position: 'absolute', top: Platform.OS === 'ios' ? 50 : 40, right: 20,
-    backgroundColor: 'rgba(0,0,0,0.6)', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20,
-    flexDirection: 'row', alignItems: 'center', gap: 6, zIndex: 50
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 40, 
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)', 
+    paddingVertical: 8, 
+    paddingHorizontal: 12, 
+    borderRadius: 20,
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    zIndex: 50
   },
-  closeText: { color: '#fff', fontWeight: '600', fontSize: 14 }
+
+  closeText: { 
+    color: '#fff', 
+    fontWeight: '600', 
+    fontSize: 14 
+  }
+
 });

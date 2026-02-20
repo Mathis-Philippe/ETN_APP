@@ -1,4 +1,3 @@
-// app/back/stats.tsx
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -22,7 +21,6 @@ export default function StatsBack() {
   const [clients, setClients] = useState<any[]>([]);
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
   
-  // Pagination : Page 0 = données les plus récentes
   const [chartPage, setChartPage] = useState(0); 
 
   const [tooltip, setTooltip] = useState<{ x: number; y: number; value: number; label: string } | null>(null);
@@ -41,14 +39,12 @@ export default function StatsBack() {
     fetchData();
   }, []);
 
-  // Reset pagination quand on change de période
   useEffect(() => {
     setChartPage(0);
   }, [period]);
 
   if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
 
-  // ------------------------ Group orders by period ------------------------
   const groupOrders = (orders: any[], type: "day" | "week" | "month") => {
     const result: Record<string, number> = {};
     orders.forEach((o) => {
@@ -69,7 +65,6 @@ export default function StatsBack() {
   };
 
   const ordersByPeriod = groupOrders(orders, period);
-  // Tri simple des dates/périodes
   const allLabels = Object.keys(ordersByPeriod).sort((a, b) => {
       if(period === 'week' && a.startsWith('S') && b.startsWith('S')) {
          const [wa, ya] = a.replace('S','').split(' ');
@@ -81,8 +76,6 @@ export default function StatsBack() {
   
   const allDataValues = allLabels.map((d) => ordersByPeriod[d]);
 
-  // ------------------------ Pagination Logic ------------------------
-  // Limites : jour=8, semaine=5, mois=4
   const limit = period === "day" ? 8 : period === "week" ? 5 : 4;
   
   const endIndex = allLabels.length - (chartPage * limit);
@@ -94,7 +87,6 @@ export default function StatsBack() {
   const canGoOlder = startIndex > 0;
   const canGoNewer = chartPage > 0;
 
-  // ------------------------ Top clients ------------------------
   const ordersByClient: Record<string, number> = {};
   orders.forEach((o) => {
     ordersByClient[o.client_id] = (ordersByClient[o.client_id] || 0) + 1;
@@ -112,7 +104,6 @@ export default function StatsBack() {
   const commented = orders.filter((o) => o.comment && o.comment.trim() !== "").length;
   const uncommented = orders.length - commented;
   
-  // Calcul du max pour les segments (éviter 0)
   const maxDataValue = visibleData.length > 0 ? Math.max(...visibleData) : 0;
   
   return (
@@ -120,7 +111,6 @@ export default function StatsBack() {
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>📊 Statistiques des commandes</Text>
 
-        {/* Sélecteur */}
         <View style={styles.tabs}>
           {(["day", "week", "month"] as const).map((p) => (
             <TouchableOpacity
@@ -135,7 +125,6 @@ export default function StatsBack() {
           ))}
         </View>
 
-        {/* Navigation Graphique */}
         <View style={styles.chartHeader}>
             <TouchableOpacity 
                 disabled={!canGoOlder} 
@@ -158,7 +147,6 @@ export default function StatsBack() {
             </TouchableOpacity>
         </View>
 
-        {/* LineChart */}
         <View>
           {visibleLabels.length > 0 ? (
             <LineChart
@@ -169,8 +157,6 @@ export default function StatsBack() {
                 style={styles.chart}
                 fromZero
                 yAxisInterval={1} 
-                // RETOUR À L'ORIGINE : segments égal au max pour avoir des lignes entières (1, 2, 3...)
-                // Si maxDataValue est 5, il y aura 5 segments.
                 segments={maxDataValue > 0 ? maxDataValue : 1} 
                 onDataPointClick={(data) => {
                     setTooltip({ x: data.x, y: data.y, value: Math.round(data.value), label: visibleLabels[data.index] });
@@ -190,7 +176,6 @@ export default function StatsBack() {
           )}
         </View>
 
-        {/* BarChart */}
         <Text style={styles.subtitle}>Top 5 clients</Text>
         <BarChart
           data={{
@@ -208,7 +193,6 @@ export default function StatsBack() {
           verticalLabelRotation={0}
         />
 
-        {/* PieChart */}
         <Text style={styles.subtitle}>Commentaires</Text>
         <PieChart
             data={[
@@ -236,20 +220,64 @@ const chartConfig = {
   strokeWidth: 2,
   barPercentage: 0.5,
   propsForLabels: { fontSize: 10 },
-  decimalPlaces: 0, // Force l'absence de décimales dans les labels
+  decimalPlaces: 0,
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 20 },
-  subtitle: { fontSize: 18, fontWeight: "600", marginVertical: 10 },
-  chart: { marginVertical: 8, borderRadius: 8 },
-  tabs: { flexDirection: "row", marginBottom: 10 },
-  tab: { flex: 1, padding: 10, borderRadius: 8, marginHorizontal: 4 },
-  activeTab: { backgroundColor: "#1e90ff" },
-  inactiveTab: { backgroundColor: "#ddd" },
-  activeText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  inactiveText: { color: "#333", fontWeight: "600", textAlign: "center" },
+  container: { 
+    flex: 1, 
+    padding: 20 
+  },
+
+  title: { 
+    fontSize: 22, 
+    fontWeight: "700", 
+    marginBottom: 20 
+  },
+
+  subtitle: { 
+    fontSize: 18, 
+    fontWeight: "600", 
+    marginVertical: 10 
+  },
+
+  chart: { 
+    marginVertical: 8, 
+    borderRadius: 8 
+  },
+
+  tabs: { 
+    flexDirection: "row", 
+    marginBottom: 10 
+  },
+
+  tab: { 
+    flex: 1, 
+    padding: 10, 
+    borderRadius: 8, 
+    marginHorizontal: 4 
+  },
+
+  activeTab: { 
+    backgroundColor: "#1e90ff" 
+  },
+
+  inactiveTab: { 
+    backgroundColor: "#ddd" 
+  },
+
+  activeText: { 
+    color: "#fff", 
+    fontWeight: "700", 
+    textAlign: "center" 
+  },
+
+  inactiveText: { 
+    color: "#333", 
+    fontWeight: "600", 
+    textAlign: "center" 
+  },
+  
   tooltip: {
     position: "absolute",
     backgroundColor: "#1e90ff",

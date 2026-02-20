@@ -13,7 +13,6 @@ Deno.serve(async (req) => {
 
     console.log("📦 Données reçues :", body);
 
-    // Génération du PDF
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([600, 800]);
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -31,9 +30,8 @@ Deno.serve(async (req) => {
     const pdfBytes = await pdfDoc.save();
     const pdfBase64 = btoa(String.fromCharCode(...pdfBytes));
 
-    // Envoi de l’email
     await resend.emails.send({
-      from: "commandes@etn-app.fr", // doit être un email vérifié ResendA
+      from: "commandes@etn-app.fr", 
       to: "etn@equipement-technique-du-nord.fr",
       subject: `Bon de commande #${orderNumber}`,
       html: `<p>Nouveau bon de commande de ${firstName} ${lastName}</p>`,

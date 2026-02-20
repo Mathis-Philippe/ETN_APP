@@ -16,25 +16,18 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import { LinearGradient } from "expo-linear-gradient";
 
-// --- CONSTANTES DE DIMENSIONNEMENT ---
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const MARGIN_HORIZONTAL = 20; // 20px de chaque côté
-// La largeur réelle disponible pour le PDF (Écran - Marges gauche/droite)
+const MARGIN_HORIZONTAL = 20;
 const CONTAINER_WIDTH = SCREEN_WIDTH - (MARGIN_HORIZONTAL * 2);
-// On force le ratio A4 (Hauteur = Largeur * √2) pour que le cadre colle au PDF
 const CONTAINER_HEIGHT = CONTAINER_WIDTH * 1.414; 
 
-// Dimensions standard A4 en pixels (72 PPI) pour le calcul Web
 const A4_WIDTH_PX = 595;
 const A4_HEIGHT_PX = 842;
 
-// --- COMPOSANT CROSS-PLATFORM ---
 const CrossPlatformWebView = ({ uri }: { uri: string }) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Calcul du facteur de zoom pour le WEB
-  // On veut que le PDF de 595px rentre dans notre conteneur (CONTAINER_WIDTH)
   const scaleFactor = CONTAINER_WIDTH / A4_WIDTH_PX;
 
   useEffect(() => {
@@ -74,7 +67,6 @@ const CrossPlatformWebView = ({ uri }: { uri: string }) => {
             width: `${A4_WIDTH_PX}px`,
             height: `${A4_HEIGHT_PX}px`,
             border: "none",
-            // Transformation CSS pour réduire le PDF pile à la taille du conteneur
             transform: `scale(${scaleFactor})`,
             transformOrigin: "top left",
           }}
@@ -84,7 +76,6 @@ const CrossPlatformWebView = ({ uri }: { uri: string }) => {
     );
   }
 
-  // Version Mobile Native
   return (
     <WebView
       source={{
@@ -92,9 +83,9 @@ const CrossPlatformWebView = ({ uri }: { uri: string }) => {
         headers: { "ngrok-skip-browser-warning": "true" },
       }}
       style={{ flex: 1, backgroundColor: 'transparent' }}
-      scalesPageToFit={true} // iOS
-      useWideViewPort={true} // Android
-      loadWithOverviewMode={true} // Android
+      scalesPageToFit={true}
+      useWideViewPort={true}
+      loadWithOverviewMode={true}
       startInLoadingState
       renderLoading={() => (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -105,7 +96,6 @@ const CrossPlatformWebView = ({ uri }: { uri: string }) => {
   );
 };
 
-// --- TYPES ---
 type OrderItem = {
   code: string;
   designation: string;
@@ -201,7 +191,6 @@ export default function OrderDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Card Client */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.iconCircle}>
@@ -216,7 +205,6 @@ export default function OrderDetailScreen() {
           </View>
         </View>
 
-        {/* Card Date */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.iconCircle}>
@@ -242,7 +230,6 @@ export default function OrderDetailScreen() {
           </View>
         </View>
 
-        {/* Card Commentaire */}
         {order.comment && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
@@ -257,7 +244,6 @@ export default function OrderDetailScreen() {
           </View>
         )}
 
-        {/* Card Articles */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.iconCircle}>
@@ -291,7 +277,6 @@ export default function OrderDetailScreen() {
           </View>
         </View>
 
-        {/* Bouton PDF */}
         <TouchableOpacity
           style={styles.pdfButton}
           onPress={() => setPdfVisible(true)}
@@ -309,11 +294,9 @@ export default function OrderDetailScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Modal PDF */}
       <Modal visible={pdfVisible} animationType="slide" onRequestClose={() => setPdfVisible(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
           
-          {/* Header Modal - Flottant au dessus */}
           <TouchableOpacity
               onPress={() => setPdfVisible(false)}
               style={styles.modalCloseButton}
@@ -323,7 +306,7 @@ export default function OrderDetailScreen() {
               <Text style={styles.modalCloseText}>Fermer</Text>
           </TouchableOpacity>
 
-          {/* Conteneur PDF à taille fixe A4 */}
+
           <View style={styles.pdfContainer}>
             <CrossPlatformWebView uri={pdfUrl} />
           </View>
@@ -334,44 +317,257 @@ export default function OrderDetailScreen() {
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: "#F1F5F9" },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F1F5F9" },
-  loadingText: { marginTop: 12, fontSize: 16, color: "#64748B", fontWeight: "500" },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F1F5F9" },
-  emptyText: { marginTop: 16, fontSize: 18, color: "#64748B", fontWeight: "500" },
-  headerGradient: { paddingTop: 60, paddingBottom: 24, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 8 },
-  headerContent: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255, 255, 255, 0.2)", justifyContent: "center", alignItems: "center" },
-  headerTextContainer: { marginLeft: 16, flex: 1 },
-  headerSubtitle: { fontSize: 14, color: "rgba(255, 255, 255, 0.9)", fontWeight: "500" },
-  headerTitle: { fontSize: 28, fontWeight: "700", color: "#fff", marginTop: 2 },
-  scrollView: { flex: 1 },
-  scrollContent: { padding: 20, paddingTop: 24 },
-  card: { backgroundColor: "#fff", borderRadius: 16, marginBottom: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3, overflow: "hidden" },
-  cardHeader: { flexDirection: "row", alignItems: "center", padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
-  iconCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#EFF6FF", justifyContent: "center", alignItems: "center", marginRight: 12 },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: "#1E293B", flex: 1 },
-  badge: { backgroundColor: "#4A90E2", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  badgeText: { color: "#fff", fontSize: 14, fontWeight: "700" },
-  cardContent: { padding: 16 },
-  clientName: { fontSize: 18, fontWeight: "600", color: "#1E293B" },
-  dateText: { fontSize: 16, color: "#1E293B", fontWeight: "500", textTransform: "capitalize" },
-  timeText: { fontSize: 14, color: "#64748B", marginTop: 4, fontWeight: "500" },
-  commentText: { fontSize: 15, color: "#475569", lineHeight: 22 },
-  itemRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12 },
-  itemRowBorder: { borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
-  itemLeft: { flexDirection: "row", alignItems: "center", flex: 1, marginRight: 12 },
-  itemDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#4A90E2", marginRight: 12 },
-  itemName: { fontSize: 15, color: "#1E293B", flex: 1, fontWeight: "500" },
-  quantityBadge: { backgroundColor: "#F1F5F9", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  quantityText: { fontSize: 14, color: "#4A90E2", fontWeight: "700" },
-  pdfButton: { marginTop: 8, marginBottom: 20, borderRadius: 16, overflow: "hidden", shadowColor: "#4A90E2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
-  pdfButtonGradient: { flexDirection: "row", alignItems: "center", justifyContent: "center", padding: 18 },
-  pdfText: { color: "#fff", fontWeight: "700", fontSize: 17, marginLeft: 12 },
+  mainContainer: { 
+    flex: 1, 
+    backgroundColor: "#F1F5F9" 
+  },
   
-  // Nouveaux styles pour le Modal "Clean"
+  loadingContainer: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    backgroundColor: "#F1F5F9" 
+  },
+
+  loadingText: { 
+    marginTop: 12, 
+    fontSize: 16, 
+    color: "#64748B", 
+    fontWeight: "500" 
+  },
+
+  centered: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    backgroundColor: "#F1F5F9" 
+  },
+
+  emptyText: { 
+    marginTop: 16, 
+    fontSize: 18, 
+    color: "#64748B", 
+    fontWeight: "500" 
+  },
+
+  headerGradient: { 
+    paddingTop: 60, 
+    paddingBottom: 24, 
+    borderBottomLeftRadius: 24, 
+    borderBottomRightRadius: 24, 
+    shadowColor: "#000", 
+    shadowOffset: { 
+      width: 0, 
+      height: 4 
+    }, 
+    shadowOpacity: 0.15, 
+    shadowRadius: 8, 
+    elevation: 8 
+  },
+
+  headerContent: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    paddingHorizontal: 20 
+  },
+
+  backButton: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    backgroundColor: "rgba(255, 255, 255, 0.2)", 
+    justifyContent: "center", 
+    alignItems: "center" 
+  },
+
+  headerTextContainer: { 
+    marginLeft: 16, 
+    flex: 1 
+  },
+
+  headerSubtitle: { 
+    fontSize: 14, 
+    color: "rgba(255, 255, 255, 0.9)", 
+    fontWeight: "500" 
+  },
+
+  headerTitle: { 
+    fontSize: 28, 
+    fontWeight: "700", 
+    color: "#fff", 
+    marginTop: 2 
+  },
+
+  scrollView: { 
+    flex: 1 
+  },
+
+  scrollContent: { 
+    padding: 20, 
+    paddingTop: 24 
+  },
+
+  card: { 
+    backgroundColor: "#fff", 
+    borderRadius: 16, 
+    marginBottom: 16, 
+    shadowColor: "#000", 
+    shadowOffset: { 
+      width: 0, 
+      height: 2 
+    }, 
+    shadowOpacity: 0.08, 
+    shadowRadius: 8, 
+    elevation: 3, 
+    overflow: "hidden" 
+  },
+
+  cardHeader: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    padding: 16, 
+    paddingBottom: 12, 
+    borderBottomWidth: 1, 
+    borderBottomColor: "#F1F5F9" 
+  },
+
+  iconCircle: { 
+    width: 36, 
+    height: 36, 
+    borderRadius: 18, 
+    backgroundColor: "#EFF6FF", 
+    justifyContent: "center", 
+    alignItems: "center", 
+    marginRight: 12 
+  },
+
+  cardTitle: { 
+    fontSize: 16, 
+    fontWeight: "700", 
+    color: "#1E293B", 
+    flex: 1 
+  },
+
+  badge: { 
+    backgroundColor: "#4A90E2", 
+    paddingHorizontal: 12, 
+    paddingVertical: 4, 
+    borderRadius: 12 
+  },
+
+  badgeText: { 
+    color: "#fff", 
+    fontSize: 14, 
+    fontWeight: "700" 
+  },
+
+  cardContent: { 
+    padding: 16 
+  },
+
+  clientName: { 
+    fontSize: 18, 
+    fontWeight: "600", 
+    color: "#1E293B" 
+  },
+
+  dateText: { 
+    fontSize: 16, 
+    color: "#1E293B", 
+    fontWeight: "500", 
+    textTransform: "capitalize" 
+  },
+
+  timeText: { 
+    fontSize: 14, 
+    color: "#64748B", 
+    marginTop: 4, 
+    fontWeight: "500" 
+  },
+
+  commentText: { 
+    fontSize: 15, 
+    color: "#475569", 
+    lineHeight: 22 
+  },
+
+  itemRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    paddingVertical: 12 
+  },
+
+  itemRowBorder: { 
+    borderBottomWidth: 1, 
+    borderBottomColor: "#F1F5F9" 
+  },
+
+  itemLeft: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    flex: 1, 
+    marginRight: 12 
+  },
+
+  itemDot: { 
+    width: 6, 
+    height: 6, 
+    borderRadius: 3, 
+    backgroundColor: "#4A90E2", 
+    marginRight: 12 
+  },
+
+  itemName: { 
+    fontSize: 15, 
+    color: "#1E293B", 
+    flex: 1, 
+    fontWeight: "500" 
+  },
+
+  quantityBadge: { 
+    backgroundColor: "#F1F5F9", 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 8 
+  },
+
+  quantityText: { 
+    fontSize: 14, 
+    color: "#4A90E2", 
+    fontWeight: "700" 
+  },
+
+  pdfButton: { 
+    marginTop: 8, 
+    marginBottom: 20, 
+    borderRadius: 16,
+    overflow: "hidden", 
+    shadowColor: "#4A90E2", 
+    shadowOffset: { 
+      width: 0, 
+      height: 4 
+    }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 8, 
+    elevation: 6 
+  },
+
+  pdfButtonGradient: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "center", 
+    padding: 18 
+  },
+
+  pdfText: { 
+    color: "#fff", 
+    fontWeight: "700", 
+    fontSize: 17, 
+    marginLeft: 12 
+  },
+  
   modalCloseButton: {
     position: 'absolute',
     top: 50,

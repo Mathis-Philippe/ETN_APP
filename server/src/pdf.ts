@@ -15,13 +15,13 @@ const companyEmail = "etn@equipement-technique-du-nord.fr";
 
 export async function generateOrderPdf(data: {
   clientName: string;
-  clientContact?: string; // AJOUT : Nom du contact (Prénom Nom)
+  clientContact?: string;
   clientAddress: string;
   clientCode: string;
   clientVille: string;
   orderNumber: string;
   cart: CartItem[];
-  comment?: string; // AJOUT : Commentaire
+  comment?: string;
 }): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   let page = doc.addPage([595, 842]);
@@ -38,7 +38,6 @@ export async function generateOrderPdf(data: {
   const margin = 50;
   let y = height - margin;
 
-  // Bandeau supérieur coloré
   page.drawRectangle({
     x: 0,
     y: height - 120,
@@ -47,7 +46,6 @@ export async function generateOrderPdf(data: {
     color: primaryColor,
   });
 
-  // En-tête entreprise
   page.drawText(companyName, {
     x: margin,
     y: height - 40,
@@ -82,7 +80,6 @@ export async function generateOrderPdf(data: {
 
   y = height - 150;
 
-  // Titre du document
   page.drawText("COMMANDE", {
     x: margin,
     y,
@@ -101,7 +98,6 @@ export async function generateOrderPdf(data: {
 
   y -= 40;
 
-  // Encadré client
   const clientBoxY = y - 80;
   page.drawRectangle({
     x: margin,
@@ -114,7 +110,6 @@ export async function generateOrderPdf(data: {
   });
 
   y -= 22;
-  // 1. Nom Société
   page.drawText(data.clientName || '', {
     x: margin + 10,
     y,
@@ -124,7 +119,6 @@ export async function generateOrderPdf(data: {
   });
 
   y -= 15;
-  // 2. Nom Contact (Prénom Nom) - AJOUTÉ
   if (data.clientContact) {
       page.drawText(`Client: ${data.clientContact}`, {
           x: margin + 10,
@@ -136,7 +130,6 @@ export async function generateOrderPdf(data: {
       y -= 15;
   }
 
-  // 3. Adresse
   page.drawText(data.clientAddress || '', {
     x: margin + 10,
     y,
@@ -146,7 +139,6 @@ export async function generateOrderPdf(data: {
   });
 
   y -= 15;
-  // 4. Code Postal & Ville
   page.drawText(`${data.clientCode || ''} - ${data.clientVille || ''}`, {
     x: margin + 10,
     y,
@@ -155,7 +147,6 @@ export async function generateOrderPdf(data: {
     color: darkGray,
   });
 
-  // --- COMMENTAIRE (à droite) ---
   if (data.comment) {
       const commentY = clientBoxY + 65; 
       page.drawText("Commentaire :", {
@@ -187,7 +178,6 @@ export async function generateOrderPdf(data: {
 
   y = clientBoxY - 45;
 
-  // En-tête du tableau
   const tableTop = y;
   const colWidths = [180, 240, 50];
   const headers = ["Référence", "Désignation", "Qté"];
@@ -214,7 +204,6 @@ export async function generateOrderPdf(data: {
 
   y = tableTop - 35;
 
-  // Lignes du panier
   let rowIndex = 0;
   for (const item of data.cart) {
     if (y < 80) {
