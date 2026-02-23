@@ -49,6 +49,14 @@ const ProfileScreen: React.FC = () => {
         <Text style={styles.logoutText}>Mes commandes</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[styles.editButton, { backgroundColor: '#10B981', marginTop: 10 }]}
+        onPress={() => router.push("/QRCodesScreen" as any)}
+      >
+        <MaterialIcons name="qr-code" size={20} color="#fff" />
+        <Text style={styles.logoutText}>Gérer les QR Codes</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.logoutButton} onPress={logout}>
         <MaterialIcons name="logout" size={20} color="#fff" />
         <Text style={styles.logoutText}>Se déconnecter</Text>
