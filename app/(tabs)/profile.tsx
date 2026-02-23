@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "expo-router";
@@ -17,7 +17,7 @@ const ProfileScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <MaterialIcons name="business" size={64} color="#4A90E2" />
         <Text style={styles.title}>Profil Société</Text>
@@ -61,7 +61,7 @@ const ProfileScreen: React.FC = () => {
         <MaterialIcons name="logout" size={20} color="#fff" />
         <Text style={styles.logoutText}>Se déconnecter</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
