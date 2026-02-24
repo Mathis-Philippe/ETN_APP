@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, TextInput, SectionList, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, SectionList, TouchableOpacity, StyleSheet, ActivityIndicator, Platform } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
 import * as Print from "expo-print";
@@ -79,7 +79,7 @@ const printQRCode = async (article: Article) => {
     const qrString = `Référence: ${article.reference}\nDésignation: ${article.designation}`;
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrString)}`;
     
-    const htmlContent = `
+    const getHtmlContent = (isWeb: boolean) => `
       <html>
         <head>
           <style>
@@ -96,13 +96,41 @@ const printQRCode = async (article: Article) => {
         </head>
         <body>
           <h1 style="text-align: center; font-size: 14px; margin-bottom: 20px;">${article.reference}</h1>
-          <img src="${qrImageUrl}" alt="QR Code" style="width: 100px; height: 100px;" />
+          <img
+            src="${qrImageUrl}"
+            alt="QR Code"
+            style="width: 100px; height: 100px;" 
+            ${isWeb ? 'onload="window.print();"' : ''} 
+          />
         </body>
       </html>
     `;
 
     try {
-      await Print.printAsync({ html: htmlContent });
+      if (Platform.OS === 'web') {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (doc) {
+          doc.open();
+          doc.write(getHtmlContent(true));
+          doc.close();
+        }
+
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 5000);
+
+      } else {
+        await Print.printAsync({ html: getHtmlContent(false) });
+      }
     } catch (error) {
       console.error("Erreur lors de l'impression :", error);
     }
@@ -181,8 +209,20 @@ const printQRCode = async (article: Article) => {
 export default QRCodesScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F2F4F7", padding: 20, top: 60 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 15, color: "#1F2937" },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#F2F4F7", 
+    padding: 20, 
+    top: 60 
+  },
+
+  title: { 
+    fontSize: 24, 
+    fontWeight: "bold", 
+    marginBottom: 15, 
+    color: "#1F2937" 
+  },
+
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -196,7 +236,11 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 2,
   },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 16 },
+  searchInput: { 
+    flex: 1, 
+    marginLeft: 10, 
+    fontSize: 16 
+  },
   
   categoryHeader: {
     flexDirection: "row",
@@ -228,10 +272,29 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 2,
   },
-  infoContainer: { flex: 1 },
-  articleName: { fontSize: 16, fontWeight: "bold", color: "#374151" },
-  articleCode: { fontSize: 12, color: "#6B7280", marginTop: 4 },
-  qrContainer: { marginRight: 15, padding: 5, backgroundColor: "#fff" },
+
+  infoContainer: { 
+    flex: 1 
+  },
+
+  articleName: { 
+    fontSize: 16, 
+    fontWeight: "bold", 
+    color: "#374151" 
+  },
+
+  articleCode: { 
+    fontSize: 12, 
+    color: "#6B7280", 
+    marginTop: 4 
+  },
+
+  qrContainer: {
+    marginRight: 15, 
+    padding: 5, 
+    backgroundColor: "#fff" 
+  },
+
   printBtn: {
     backgroundColor: "#3B82F6",
     padding: 10,
@@ -239,5 +302,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  emptyText: { textAlign: "center", marginTop: 20, color: "#6B7280", fontSize: 16 },
+
+  emptyText: { 
+    textAlign: "center", 
+    marginTop: 20, 
+    color: "#6B7280", 
+    fontSize: 16 
+  },
 });

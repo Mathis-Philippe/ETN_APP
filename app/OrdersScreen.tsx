@@ -148,13 +148,47 @@ const OrdersScreen: React.FC = () => {
 export default OrdersScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC", paddingTop: 50 },
-  header: { flexDirection: "row", alignItems: "center", marginBottom: 20, paddingHorizontal: 20 },
-  backButton: { marginRight: 12 },
-  title: { fontSize: 28, fontWeight: "700", color: "#1E293B" },
-  listContent: { paddingHorizontal: 20, paddingBottom: 20 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFC" },
-  emptyText: { fontSize: 16, color: "#64748B", fontWeight: "500" },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#F8FAFC", 
+    paddingTop: 50 
+  },
+
+  header: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginBottom: 20, 
+    paddingHorizontal: 20 
+  },
+
+  backButton: { 
+    marginRight: 12 
+  },
+
+  title: { 
+    fontSize: 28, 
+    fontWeight: "700", 
+    color: "#1E293B" 
+  },
+
+  listContent: { 
+    paddingHorizontal: 20, 
+    paddingBottom: 20 
+  },
+
+  centered: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    backgroundColor: "#F8FAFC" 
+  },
+
+  emptyText: { 
+    fontSize: 16, 
+    color: "#64748B", 
+    fontWeight: "500" 
+  },
+
   orderCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
@@ -168,13 +202,58 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
-  orderHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-  orderNumberBadge: { backgroundColor: "#EEF2FF", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  orderNumberText: { fontSize: 16, fontWeight: "700", color: "#6d88ff" },
-  dateText: { fontSize: 14, color: "#64748B", fontWeight: "500" },
-  divider: { height: 1, backgroundColor: "#E2E8F0", marginBottom: 16 },
-  orderDetails: { gap: 12 },
-  detailRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  label: { fontSize: 14, color: "#64748B", fontWeight: "500" },
-  value: { fontSize: 15, color: "#1E293B", fontWeight: "600" },
+
+  orderHeader: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    marginBottom: 16 
+  },
+
+  orderNumberBadge: { 
+    backgroundColor: "#EEF2FF", 
+    paddingHorizontal: 16, 
+    paddingVertical: 8, 
+    borderRadius: 20 
+  },
+
+  orderNumberText: { 
+    fontSize: 16, 
+    fontWeight: "700", 
+    color: "#6d88ff"
+
+  },
+  dateText: { 
+    fontSize: 14, 
+    color: "#64748B", 
+    fontWeight: "500" 
+  },
+
+  divider: { 
+    height: 1, 
+    backgroundColor: "#E2E8F0",
+    marginBottom: 16 
+  },
+
+  orderDetails: { 
+    gap: 12 
+  },
+
+  detailRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center" 
+  },
+
+  label: { 
+    fontSize: 14, 
+    color: "#64748B", 
+    fontWeight: "500" 
+  },
+
+  value: { 
+    fontSize: 15, 
+    color: "#1E293B", 
+    fontWeight: "600" 
+  },
 });

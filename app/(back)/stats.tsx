@@ -285,7 +285,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     zIndex: 1000,
   },
-  tooltipText: { color: "#fff", fontWeight: "700", fontSize: 12, textAlign: "center" },
+
+  tooltipText: { 
+    color: "#fff", 
+    fontWeight: "700", 
+    fontSize: 12, 
+    textAlign: "center" 
+  },
+  
   chartHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',

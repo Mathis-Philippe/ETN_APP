@@ -68,9 +68,25 @@ const ProfileScreen: React.FC = () => {
 export default ProfileScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F2F4F7", padding: 20, marginTop: 20 },
-  header: { alignItems: "center", marginBottom: 30 },
-  title: { fontSize: 26, fontWeight: "700", marginTop: 12, color: "#1F2937" },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#F2F4F7", 
+    padding: 20, 
+    marginTop: 20 
+  },
+
+  header: { 
+    alignItems: "center", 
+    marginBottom: 30 
+  },
+
+  title: { 
+    fontSize: 26, 
+    fontWeight: "700", 
+    marginTop: 12, 
+    color: "#1F2937" 
+  },
+
   card: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
@@ -81,10 +97,34 @@ const styles = StyleSheet.create({
     elevation: 4,
     marginBottom: 20,
   },
-  row: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
-  label: { fontSize: 16, fontWeight: "600", marginLeft: 10, color: "#374151", width: 120 },
-  value: { fontSize: 16, color: "#6B7280", flex: 1, flexWrap: "wrap" },
-  separator: { height: 1, backgroundColor: "#E5E7EB", marginVertical: 10 },
+
+  row: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginVertical: 10 
+  },
+
+  label: { 
+    fontSize: 16, 
+    fontWeight: "600", 
+    marginLeft: 10, 
+    color: "#374151", 
+    width: 120 
+  },
+
+  value: { 
+    fontSize: 16, 
+    color: "#6B7280", 
+    flex: 1, 
+    flexWrap: "wrap" 
+  },
+
+  separator: { 
+    height: 1, 
+    backgroundColor: "#E5E7EB", 
+    marginVertical: 10 
+  },
+
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -94,7 +134,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 20,
   },
-  logoutText: { color: "#fff", fontSize: 16, fontWeight: "600", marginLeft: 10 },
+
+  logoutText: { 
+    color: "#fff", 
+    fontSize: 16, 
+    fontWeight: "600", 
+    marginLeft: 10 
+  },
+
   editButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -104,6 +151,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 10,
   },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  error: { fontSize: 18, color: "#DC2626", fontWeight: "600" },
+
+  centered: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center" 
+  },
+
+  error: { 
+    fontSize: 18, 
+    color: "#DC2626", 
+    fontWeight: "600"
+  },
 });

@@ -266,7 +266,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-  manualButtonText: { color: "#2563EB", fontWeight: "700", fontSize: 16 },
+  manualButtonText: { 
+    color: "#2563EB", 
+    fontWeight: "700", 
+    fontSize: 16 
+  },
 
   toggleButton: {
     marginTop: 30,
