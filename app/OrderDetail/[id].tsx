@@ -166,7 +166,7 @@ export default function OrderDetailScreen() {
     );
   }
 
-  const pdfUrl = `${API_URL}/pdf-proxy/${order.order_number}`;
+  const pdfUrl = `${API_URL}/pdf-proxy/${encodeURIComponent(order.order_number)}`;
 
   return (
     <View style={styles.mainContainer}>

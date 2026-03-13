@@ -72,7 +72,7 @@ app.post('/send-order-pdf', async (req, res) => {
   }
 });
 
-app.get("/pdf-proxy/:orderNumber", async (req, res) => {
+app.get("/pdf-proxy/:orderNumber(*)", async (req, res) => {
   try {
     const orderNumber = decodeURIComponent(req.params.orderNumber as string);
 
@@ -123,7 +123,7 @@ app.get("/pdf-proxy/:orderNumber", async (req, res) => {
   }
 });
 
-app.get("/order-pdf/:orderNumber", async (req, res) => {
+app.get("/order-pdf/:orderNumber(*)", async (req, res) => {
     try {
       const orderNumber = decodeURIComponent(req.params.orderNumber as string);
       const { data: order, error } = await supabase.from("orders").select("*").eq("order_number", orderNumber).single();
