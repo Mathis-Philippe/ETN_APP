@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import supabase from "../../lib/supabase";
 import Toast from "react-native-toast-message";
+import { Picker } from '@react-native-picker/picker';
 
 export default function CartScreen() {
   const { cart, removeFromCart, clearCart, updateQuantity, addToCart } = useCart();
@@ -33,6 +34,11 @@ export default function CartScreen() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newDesignation, setNewDesignation] = useState("");
+  const [newCategory, setNewCategory] = useState("Standard");
 
   const openConfirmModal = (title: string, message: string, action: () => void) => {
     setConfirmTitle(title);
@@ -87,6 +93,7 @@ export default function CartScreen() {
   const handleSearch = async (text: string) => {
     setSearchQuery(text);
     if (text.length >= 2) {
+      setIsSearching(true);
       const { data, error } = await supabase
         .from("articles")
         .select("id, reference, designation")
@@ -96,8 +103,10 @@ export default function CartScreen() {
       if (!error && data) {
         setSearchResults(data);
       }
+      setIsSearching(false);
     } else {
       setSearchResults([]);
+      setIsSearching(false);
     }
   };
 
@@ -109,6 +118,69 @@ export default function CartScreen() {
       pathname: "/ArticleDetail",
       params: { manualId: item.id } 
     });
+  };
+
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("categorie")
+        .limit(5000);
+
+      if (!error && data) {
+        const uniqueCategories = Array.from(
+          new Set(data.map(item => item.categorie).filter(Boolean))
+        );
+        setCategoriesList(uniqueCategories.sort());
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const handleCreateReference = async () => {
+    if (!newDesignation || !searchQuery) {
+      Toast.show({ type: "error", text1: "Erreur", text2: "Veuillez remplir la désignation." });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('app_created_references')
+        .insert([
+          { 
+            code: searchQuery, 
+            designation: newDesignation, 
+            category: newCategory 
+          }
+        ]);
+
+      if (error) throw error;
+
+      Toast.show({ type: "success", text1: "Succès", text2: "Référence créée." });
+
+      setShowCreateModal(false);
+      setSearchQuery(""); 
+      setSearchResults([]);
+
+      router.push({
+        pathname: "/ArticleDetail",
+        params: {
+          code: searchQuery,
+          designation: newDesignation,
+          category: newCategory,
+          isNewCustomItem: 'true'
+        }
+      });
+      
+      setNewDesignation("");
+      setNewCategory("Standard");
+    } catch (err) {
+      console.error("Erreur lors de la création :", err);
+      Toast.show({ type: "error", text1: "Erreur", text2: "Erreur lors de la sauvegarde." });
+    }
   };
 
   const loadPreviousOrders = async () => {
@@ -222,22 +294,34 @@ export default function CartScreen() {
           placeholderTextColor="#999"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => { setSearchQuery(""); setSearchResults([]); }}>
+          <TouchableOpacity onPress={() => { setSearchQuery(""); setSearchResults([]); setIsSearching(false); }}>
             <MaterialIcons name="close" size={24} color="#999" />
           </TouchableOpacity>
         )}
       </View>
 
-      {searchResults.length > 0 && (
+      {searchQuery.length >= 2 && (
         <View style={styles.searchResultsContainer}>
-          <ScrollView keyboardShouldPersistTaps="handled">
-            {searchResults.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.searchResultItem} onPress={() => navigateToArticle(item)}>
-                <Text style={styles.searchResultRef}>{item.reference}</Text>
-                <Text style={styles.searchResultDes} numberOfLines={1}>{item.designation}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {searchResults.length > 0 ? (
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 250 }}>
+              {searchResults.map((item) => (
+                <TouchableOpacity key={item.id} style={styles.searchResultItem} onPress={() => navigateToArticle(item)}>
+                  <Text style={styles.searchResultRef}>{item.reference}</Text>
+                  <Text style={styles.searchResultDes} numberOfLines={1}>{item.designation}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            !isSearching && (
+              <View style={styles.emptySearchContainer}>
+                <Text style={styles.emptySearchText}>Référence "{searchQuery}" introuvable.</Text>
+                <TouchableOpacity style={styles.createRefButton} onPress={() => setShowCreateModal(true)}>
+                  <MaterialIcons name="add-circle-outline" size={20} color="#fff" />
+                  <Text style={styles.createRefText}>Créer cette référence</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          )}
         </View>
       )}
 
@@ -373,6 +457,47 @@ export default function CartScreen() {
               <Text style={styles.saveText}>Confirmer</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancelConfirm}>
+              <Text style={styles.cancelText}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showCreateModal} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitleOld}>Nouvelle Référence</Text>
+            
+            <Text style={styles.subtitle}>Code : <Text style={{fontWeight: 'bold', color: '#333'}}>{searchQuery}</Text></Text>
+            
+            <TextInput
+              style={[styles.input, { marginTop: 15 }]}
+              placeholder="Désignation (ex: Raccord Laiton...)"
+              value={newDesignation}
+              onChangeText={setNewDesignation}
+              placeholderTextColor="#999"
+            />
+
+            <Text style={[styles.subtitle, { marginBottom: 10, marginTop: 5 }]}>Catégorie :</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={newCategory}
+                onValueChange={(itemValue) => setNewCategory(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Sélectionnez une catégorie..." value="" color="#999" />
+                {categoriesList.map((cat, index) => (
+                  <Picker.Item key={index} label={cat} value={cat} />
+                ))}
+                {!categoriesList.includes('Tuyaux') && <Picker.Item label="Tuyaux" value="Tuyaux" />}
+              </Picker>
+            </View>
+
+            <TouchableOpacity onPress={handleCreateReference} style={styles.saveButton}>
+              <Text style={styles.saveText}>Valider et configurer</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity onPress={() => setShowCreateModal(false)} style={styles.cancelButton}>
               <Text style={styles.cancelText}>Annuler</Text>
             </TouchableOpacity>
           </View>
@@ -685,13 +810,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#DDD",
     marginBottom: 15,
-    maxHeight: 250,
     elevation: 4,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     zIndex: 10, 
+    overflow: 'hidden'
   },
   searchResultItem: {
     padding: 15,
@@ -707,5 +832,70 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 14,
     marginTop: 4,
+  },
+  emptySearchContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptySearchText: {
+    color: "#666",
+    fontSize: 15,
+    marginBottom: 15,
+    textAlign: "center"
+  },
+  createRefButton: {
+    flexDirection: "row",
+    backgroundColor: "#4A90E2",
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  createRefText: {
+    color: "#fff",
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  categoryContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    gap: 10
+  },
+  catBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 8,
+    alignItems: "center",
+    backgroundColor: "#FAFAFA"
+  },
+  catBtnActive: {
+    borderColor: "#4A90E2",
+    backgroundColor: "#EFF6FF"
+  },
+  catBtnText: {
+    color: "#666",
+    fontWeight: "600",
+  },
+  catBtnTextActive: {
+    color: "#4A90E2"
+  },
+
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 8,
+    backgroundColor: "#FAFAFA",
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+
+  picker: {
+    height: 50,
+    width: "100%",
+    color: "#333",
   },
 });

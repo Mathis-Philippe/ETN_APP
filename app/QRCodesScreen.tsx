@@ -3,13 +3,13 @@ import { View, Text, TextInput, SectionList, TouchableOpacity, StyleSheet, Activ
 import { MaterialIcons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
 import * as Print from "expo-print";
-import * as Sharing from "expo-sharing";
 import supabase from "../lib/supabase";
 
 type Article = {
   reference: string;  
   designation: string;
   categorie?: string; 
+  isCustom?: boolean; // Permet de savoir si c'est un article créé manuellement
 };
 
 const QRCodesScreen = () => {
@@ -28,24 +28,48 @@ const QRCodesScreen = () => {
 
   const searchArticlesInDatabase = async (term: string) => {
     setLoading(true);
-    
-    let query = supabase
-      .from("articles")
-      .select("*")
-      .limit(10000) 
-      .order("categorie", { ascending: true }); 
-
     const cleanTerm = term.trim();
+    
+    // 1. Préparer la requête pour les articles standards
+    let queryStandard = supabase
+      .from("articles")
+      .select("reference, designation, categorie")
+      .limit(5000); 
+
     if (cleanTerm !== "") {
-      query = query.or(`designation.ilike.%${cleanTerm}%,reference.ilike.%${cleanTerm}%`);
+      queryStandard = queryStandard.or(`designation.ilike.%${cleanTerm}%,reference.ilike.%${cleanTerm}%`);
     }
 
-    const { data, error } = await query;
-    if (error) {
-      console.error("Erreur de recherche Supabase:", error);
-    } else {
-      setArticles(data || []);
+    // 2. Préparer la requête pour les articles créés manuellement
+    let queryCustom = supabase
+      .from("app_created_references")
+      .select("code, designation, category")
+      .limit(5000);
+
+    if (cleanTerm !== "") {
+      queryCustom = queryCustom.or(`designation.ilike.%${cleanTerm}%,code.ilike.%${cleanTerm}%`);
     }
+
+    // 3. Exécuter les deux requêtes en parallèle pour gagner du temps
+    const [resStandard, resCustom] = await Promise.all([queryStandard, queryCustom]);
+
+    if (resStandard.error) console.error("Erreur de recherche articles:", resStandard.error);
+    if (resCustom.error) console.error("Erreur de recherche custom:", resCustom.error);
+
+    // 4. Formater et fusionner les résultats
+    const standardData: Article[] = resStandard.data || [];
+    
+    const customData: Article[] = (resCustom.data || []).map(item => ({
+      reference: item.code,
+      designation: item.designation,
+      categorie: item.category, // On map 'category' vers 'categorie'
+      isCustom: true
+    }));
+
+    // On combine les deux tableaux
+    const combinedArticles = [...standardData, ...customData];
+    
+    setArticles(combinedArticles);
     setLoading(false);
   };
 
@@ -76,6 +100,7 @@ const QRCodesScreen = () => {
   };
 
 const printQRCode = async (article: Article) => {
+    // Si vous utilisez la syntaxe "ref:123" pour votre scanner, vous pouvez adapter qrString ici
     const qrString = `Référence: ${article.reference}\nDésignation: ${article.designation}`;
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrString)}`;
     
@@ -156,7 +181,7 @@ const printQRCode = async (article: Article) => {
       ) : (
         <SectionList
           sections={groupedArticles}
-          keyExtractor={(item) => item.reference.toString()}
+          keyExtractor={(item, index) => `${item.reference}-${index}`} // Ajout de l'index au cas où il y ait des doublons temporaires
           contentContainerStyle={{ paddingBottom: 20 }}
           stickySectionHeadersEnabled={false}
           
@@ -185,8 +210,17 @@ const printQRCode = async (article: Article) => {
             return (
               <View style={styles.card}>
                 <View style={styles.infoContainer}>
-                  <Text style={styles.articleName}>{item.designation}</Text>
-                  <Text style={styles.articleCode}>Réf: {item.reference}</Text>
+                  <Text style={styles.articleName}>
+                    {item.designation}
+                  </Text>
+                  <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
+                    <Text style={styles.articleCode}>Réf: {item.reference}</Text>
+                    {item.isCustom && (
+                      <View style={styles.customBadge}>
+                        <Text style={styles.customBadgeText}>Nouveau</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
                 
                 <View style={styles.qrContainer}>
@@ -286,7 +320,19 @@ const styles = StyleSheet.create({
   articleCode: { 
     fontSize: 12, 
     color: "#6B7280", 
-    marginTop: 4 
+  },
+
+  customBadge: {
+    backgroundColor: "#D1FAE5",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  customBadgeText: {
+    color: "#059669",
+    fontSize: 10,
+    fontWeight: "bold",
   },
 
   qrContainer: {

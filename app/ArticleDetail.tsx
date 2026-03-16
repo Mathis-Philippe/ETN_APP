@@ -10,16 +10,31 @@ import {
   ScrollView,
   KeyboardAvoidingView, 
   Platform,
-  Dimensions
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons"; 
 import supabase from "../lib/supabase"; 
 import { useCart } from "../context/CartContext";
 import { parseQrData } from "../lib/qrParser";
+import QRCode from 'react-native-qrcode-svg';
 
 export default function ArticleDetail() {
-  const { qrData, manualId } = useLocalSearchParams<{ qrData?: string, manualId?: string }>();
+  const { 
+    qrData, 
+    manualId, 
+    isNewCustomItem, 
+    code, 
+    designation, 
+    category 
+  } = useLocalSearchParams<{ 
+    qrData?: string, 
+    manualId?: string,
+    isNewCustomItem?: string,
+    code?: string,
+    designation?: string,
+    category?: string,
+  }>();
+
   const router = useRouter();
   const { addToCart } = useCart();
 
@@ -27,18 +42,29 @@ export default function ArticleDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-
   const [quantity, setQuantity] = useState<string>("1");
   const [length, setLength] = useState<string>(""); 
   const [isTuyau, setIsTuyau] = useState(false); 
 
-useEffect(() => {
+  useEffect(() => {
     const fetchArticle = async () => {
       setLoading(true);
       setError(null);
       setArticle(null);
       setIsTuyau(false);
       setLength("");
+
+      if (isNewCustomItem === 'true') {
+        setArticle({
+          id: code,
+          reference: code,
+          designation: designation,
+          categorie: category
+        });
+        setIsTuyau(category === 'Tuyau');
+        setLoading(false);
+        return;
+      }
 
       try {
         let data = null;
@@ -107,7 +133,7 @@ useEffect(() => {
     };
 
     fetchArticle();
-  }, [qrData, manualId]);
+  }, [qrData, manualId, isNewCustomItem, code, designation, category]);
 
   const qtyNumber = () => {
     const n = parseInt(quantity || "0", 10);
@@ -199,10 +225,18 @@ useEffect(() => {
             </View>
           </View>
 
+          {isNewCustomItem === 'true' && (
+            <View style={styles.qrContainer}>
+              <Text style={styles.qrTitle}>QR Code généré</Text>
+              <View style={styles.qrWrapper}>
+                <QRCode value={`ref:${article.reference}`} size={120} />
+              </View>
+              <Text style={styles.qrHint}>Ce code est lié à la nouvelle référence.</Text>
+            </View>
+          )}
 
           <View style={styles.card}>
             
-
             {isTuyau && (
               <View style={styles.section}>
                 <Text style={styles.label}>
@@ -252,7 +286,6 @@ useEffect(() => {
 
         </ScrollView>
       </KeyboardAvoidingView>
-
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.addBtn} onPress={handleAddToCart} activeOpacity={0.8}>
@@ -332,6 +365,38 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
     textTransform: "uppercase",
+  },
+
+  qrContainer: {
+    backgroundColor: "white",
+    alignItems: "center",
+    padding: 20,
+    borderRadius: 24,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  qrTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#374151",
+    marginBottom: 15,
+  },
+  qrWrapper: {
+    padding: 10,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
+  },
+  qrHint: {
+    marginTop: 15,
+    fontSize: 13,
+    color: "#9CA3AF",
+    textAlign: "center",
   },
 
   card: {
