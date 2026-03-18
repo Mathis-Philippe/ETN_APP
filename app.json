@@ -29,7 +29,7 @@
     "web": {
       "output": "static",
       "favicon": "./public/icon.png",
-      "display": "standalone", 
+      "display": "standalone",
       "name": "ETNApp",
       "shortName": "ETN",
       "themeColor": "#4A90E2",
@@ -39,7 +39,7 @@
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       },
-    "meta": {
+      "meta": {
         "apple": {
           "mobileWebAppCapable": "yes",
           "mobileWebAppStatusBarStyle": "black-translucent"
@@ -59,7 +59,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

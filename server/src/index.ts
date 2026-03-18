@@ -5,6 +5,7 @@ import cors from 'cors';
 import { sendOrderEmail } from './mail.js';
 import { generateOrderPdf } from './pdf.js';
 import supabase from './supabaseClient.js';
+import { generateDivaltoExcel } from './divaltoExcel.js';
 
 dotenv.config();
 const app = express();
@@ -34,6 +35,7 @@ app.post('/send-order-pdf', async (req, res) => {
 
     const contactName = `${payload.firstName || ''} ${payload.lastName || ''}`.trim();
 
+    // 1. Préparation des données pour le PDF
     const pdfData = {
       clientName: clientData.nom,
       clientContact: contactName,
@@ -50,18 +52,27 @@ app.post('/send-order-pdf', async (req, res) => {
       comment: payload.comment || '',
     };
 
+    // 2. Génération du PDF
     const pdfUint8Array = await generateOrderPdf(pdfData);
     const pdfBuffer = Buffer.from(pdfUint8Array);
 
+    const excelBuffer = generateDivaltoExcel(payload);
+
+    // 4. Envoi de l'e-mail avec les DEUX pièces jointes
     await sendOrderEmail({
-      to: "etn@equipement-technique-du-nord.fr",
+      to: "mathis.philippe2005@gmail.com", // Votre email de test
       subject: `Nouvelle Commande #${payload.orderNumber} - ${clientData.nom}`,
-      text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par ${clientData.nom} (Contact : ${contactName}).\n\nVous trouverez le bon de commande en pièce jointe.`,
+      text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par ${clientData.nom} (Contact : ${contactName}).\n\nVous trouverez en pièces jointes :\n- Le bon de commande en PDF.\n- Le fichier Excel prêt à être importé dans Divalto.`,
       attachments: [
         {
           filename: `Commande-${payload.orderNumber}.pdf`,
           content: pdfBuffer,
         },
+        {
+          // ON ENVOIE UN VRAI .XLSX MAINTENANT
+          filename: `Import-Divalto-${payload.orderNumber}.xlsx`, 
+          content: excelBuffer,
+        }
       ],
     });
 
