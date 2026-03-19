@@ -9,6 +9,8 @@ import {
   Modal,
   Platform,
   Dimensions,
+  Alert,
+  Linking
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import supabase from "../../lib/supabase";
@@ -19,7 +21,7 @@ import { LinearGradient } from "expo-linear-gradient";
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const MARGIN_HORIZONTAL = 20;
 const CONTAINER_WIDTH = SCREEN_WIDTH - (MARGIN_HORIZONTAL * 2);
-const CONTAINER_HEIGHT = CONTAINER_WIDTH * 1.414; 
+const CONTAINER_HEIGHT = CONTAINER_WIDTH * 1.414;
 
 const A4_WIDTH_PX = 595;
 const A4_HEIGHT_PX = 842;
@@ -166,6 +168,32 @@ export default function OrderDetailScreen() {
     );
   }
 
+const handleDownload = async () => {
+    if (!order) return;
+
+    try {
+      if (Platform.OS === "web") {
+        const link = document.createElement("a");
+        link.href = pdfUrl;
+        link.download = `Commande_${order.order_number}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        const canOpen = await Linking.canOpenURL(pdfUrl);
+        
+        if (canOpen) {
+          await Linking.openURL(pdfUrl);
+        } else {
+          Alert.alert("Erreur", "Votre appareil ne peut pas ouvrir ce type de lien.");
+        }
+      }
+    } catch (error: any) {
+      Alert.alert("Erreur", error?.message || "Une erreur inconnue est survenue.");
+      console.error(error);
+    }
+  };
+
   const pdfUrl = `${API_URL}/pdf-proxy/${encodeURIComponent(order.id)}`;
 
   return (
@@ -294,18 +322,28 @@ export default function OrderDetailScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      <Modal visible={pdfVisible} animationType="slide" onRequestClose={() => setPdfVisible(false)}>
+    <Modal visible={pdfVisible} animationType="slide" onRequestClose={() => setPdfVisible(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
           
-          <TouchableOpacity
+          <View style={styles.modalHeaderActions}>
+            <TouchableOpacity
+              onPress={handleDownload}
+              style={styles.modalActionButton}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="file-download" size={24} color="#fff" />
+              <Text style={styles.modalActionText}>Télécharger</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               onPress={() => setPdfVisible(false)}
-              style={styles.modalCloseButton}
+              style={styles.modalActionButton}
               activeOpacity={0.7}
             >
               <MaterialIcons name="close" size={24} color="#fff" />
-              <Text style={styles.modalCloseText}>Fermer</Text>
-          </TouchableOpacity>
-
+              <Text style={styles.modalActionText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.pdfContainer}>
             <CrossPlatformWebView uri={pdfUrl} />
@@ -596,5 +634,30 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
+  },
+
+  modalHeaderActions: {
+    position: 'absolute',
+    top: 50,
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    zIndex: 10,
+  },
+
+  modalActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+
+  modalActionText: {
+    color: '#fff',
+    marginLeft: 8,
+    fontWeight: '600',
   },
 });
