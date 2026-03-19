@@ -35,7 +35,6 @@ app.post('/send-order-pdf', async (req, res) => {
 
     const contactName = `${payload.firstName || ''} ${payload.lastName || ''}`.trim();
 
-    // 1. Préparation des données pour le PDF
     const pdfData = {
       clientName: clientData.nom,
       clientContact: contactName,
@@ -52,15 +51,13 @@ app.post('/send-order-pdf', async (req, res) => {
       comment: payload.comment || '',
     };
 
-    // 2. Génération du PDF
     const pdfUint8Array = await generateOrderPdf(pdfData);
     const pdfBuffer = Buffer.from(pdfUint8Array);
 
     const excelBuffer = generateDivaltoExcel(payload);
 
-    // 4. Envoi de l'e-mail avec les DEUX pièces jointes
     await sendOrderEmail({
-      to: "mathis.philippe2005@gmail.com", // Votre email de test
+      to: "mathis.philippe2005@gmail.com",
       subject: `Nouvelle Commande #${payload.orderNumber} - ${clientData.nom}`,
       text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par ${clientData.nom} (Contact : ${contactName}).\n\nVous trouverez en pièces jointes :\n- Le bon de commande en PDF.\n- Le fichier Excel prêt à être importé dans Divalto.`,
       attachments: [
@@ -69,7 +66,6 @@ app.post('/send-order-pdf', async (req, res) => {
           content: pdfBuffer,
         },
         {
-          // ON ENVOIE UN VRAI .XLSX MAINTENANT
           filename: `Import-Divalto-${payload.orderNumber}.xlsx`, 
           content: excelBuffer,
         }
@@ -83,18 +79,19 @@ app.post('/send-order-pdf', async (req, res) => {
   }
 });
 
-app.get("/pdf-proxy/:orderNumber(*)", async (req, res) => {
+app.get("/pdf-proxy/:id", async (req, res) => {
   try {
-    const orderNumber = decodeURIComponent(req.params.orderNumber as string);
+    const orderId = req.params.id;
+
 
     const { data: order, error } = await supabase
       .from("orders")
       .select("*")
-      .eq("order_number", orderNumber)
+      .eq("id", orderId)
       .single();
 
     if (error || !order) {
-      console.error("Commande non trouvée pour :", orderNumber);
+      console.error("Commande non trouvée pour l'ID :", orderId);
       return res.status(404).send("Commande non trouvée");
     }
 
@@ -112,7 +109,7 @@ app.get("/pdf-proxy/:orderNumber(*)", async (req, res) => {
       clientAddress: client?.adresse || "",
       clientCode: client?.code_postal || "",
       clientVille: client?.ville || "",
-      orderNumber: orderNumber,
+      orderNumber: order.order_number,
       comment: order.comment || "",
       cart: order.items.products.map((p: any) => ({
         reference: p.code,
@@ -124,20 +121,20 @@ app.get("/pdf-proxy/:orderNumber(*)", async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `inline; filename="Commande-${orderNumber}.pdf"`
+      `inline; filename="Commande-${order.order_number}.pdf"`
     );
     res.send(Buffer.from(pdfBuffer));
     
   } catch (err) {
-    console.error("Erreur /pdf-proxy/:orderNumber", err);
+    console.error("Erreur /pdf-proxy/:id", err);
     res.status(500).send("Erreur serveur lors de la génération du PDF");
   }
 });
 
-app.get("/order-pdf/:orderNumber(*)", async (req, res) => {
+app.get("/order-pdf/:id", async (req, res) => {
     try {
-      const orderNumber = decodeURIComponent(req.params.orderNumber as string);
-      const { data: order, error } = await supabase.from("orders").select("*").eq("order_number", orderNumber).single();
+      const orderId = req.params.id;
+      const { data: order, error } = await supabase.from("orders").select("*").eq("id", orderId).single();
   
       if (error || !order) return res.status(404).send("Commande non trouvée");
   
@@ -149,19 +146,19 @@ app.get("/order-pdf/:orderNumber(*)", async (req, res) => {
         clientAddress: client?.adresse || "",
         clientCode: client?.code_postal || "",
         clientVille: client?.ville || "",
-        orderNumber,
+        orderNumber: order.order_number,
         comment: order.comment || "",
         cart: order.items.products.map((p: any) => ({ reference: p.code, designation: p.designation, qty: p.quantity })),
       });
   
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `inline; filename="Commande-${orderNumber}.pdf"`);
+      res.setHeader("Content-Disposition", `inline; filename="Commande-${order.order_number}.pdf"`);
       res.send(Buffer.from(pdfBuffer));
     } catch (err) {
       console.error("Erreur génération PDF:", err);
       res.status(500).send("Erreur serveur");
     }
-  });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
