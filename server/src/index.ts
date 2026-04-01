@@ -56,7 +56,7 @@ app.post('/send-order-pdf', async (req, res) => {
     await sendOrderEmail({
       to: "mathis.philippe2005@gmail.com",
       subject: `Nouvelle Commande #${payload.orderNumber} - ${clientData.nom}`,
-      text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par ${clientData.nom} (Contact : ${contactName}).\n\nVous trouverez en pièces jointes :\n- Le bon de commande en PDF.\n- Le fichier Excel prêt à être importé dans Divalto.`,
+      text: `Bonjour Admin,\n\nUne nouvelle commande a été passée par ${clientData.nom} (Contact : ${contactName}).\n\nVous trouverez en pièces jointes :\n- Le bon de commande en PDF.`,
       attachments: [
         {
           filename: `Commande-${payload.orderNumber}.pdf`,

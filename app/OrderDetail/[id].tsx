@@ -9,8 +9,7 @@ import {
   Modal,
   Platform,
   Dimensions,
-  Alert,
-  Linking
+  Alert
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import supabase from "../../lib/supabase";
@@ -29,26 +28,34 @@ const A4_HEIGHT_PX = 842;
 const CrossPlatformWebView = ({ uri }: { uri: string }) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAndroidWeb, setIsAndroidWeb] = useState(false);
 
   const scaleFactor = CONTAINER_WIDTH / A4_WIDTH_PX;
 
   useEffect(() => {
     if (Platform.OS === "web") {
-      const fetchPdf = async () => {
-        try {
-          const response = await fetch(uri, {
-            headers: { "ngrok-skip-browser-warning": "true" },
-          });
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          setBlobUrl(url);
-        } catch (error) {
-          console.error("Erreur chargement PDF web:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchPdf();
+      const isAndroid = /android/i.test(navigator.userAgent.toLowerCase());
+      setIsAndroidWeb(isAndroid);
+
+      if (!isAndroid) {
+        const fetchPdf = async () => {
+          try {
+            const response = await fetch(uri, {
+              headers: { "ngrok-skip-browser-warning": "true" },
+            });
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            setBlobUrl(url);
+          } catch (error) {
+            console.error("Erreur chargement PDF web:", error);
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchPdf();
+      } else {
+        setLoading(false);
+      }
     }
   }, [uri]);
 
@@ -61,15 +68,19 @@ const CrossPlatformWebView = ({ uri }: { uri: string }) => {
       );
     }
 
+    const iframeSrc = isAndroidWeb 
+      ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(uri)}`
+      : (blobUrl || "");
+
     return (
       <View style={{ width: CONTAINER_WIDTH, height: CONTAINER_HEIGHT, overflow: 'hidden', backgroundColor: 'white' }}>
         <iframe
-          src={blobUrl || ""}
+          src={iframeSrc}
           style={{
-            width: `${A4_WIDTH_PX}px`,
-            height: `${A4_HEIGHT_PX}px`,
+            width: isAndroidWeb ? "100%" : `${A4_WIDTH_PX}px`,
+            height: isAndroidWeb ? "100%" : `${A4_HEIGHT_PX}px`,
             border: "none",
-            transform: `scale(${scaleFactor})`,
+            transform: isAndroidWeb ? "none" : `scale(${scaleFactor})`,
             transformOrigin: "top left",
           }}
           title="Bon de commande"
@@ -172,22 +183,17 @@ const handleDownload = async () => {
     if (!order) return;
 
     try {
-      if (Platform.OS === "web") {
+      setPdfVisible(false);
+      setTimeout(() => {
         const link = document.createElement("a");
         link.href = pdfUrl;
         link.download = `Commande_${order.order_number}.pdf`;
+        link.target = "_blank";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-      } else {
-        const canOpen = await Linking.canOpenURL(pdfUrl);
-        
-        if (canOpen) {
-          await Linking.openURL(pdfUrl);
-        } else {
-          Alert.alert("Erreur", "Votre appareil ne peut pas ouvrir ce type de lien.");
-        }
-      }
+      }, 300);
+
     } catch (error: any) {
       Alert.alert("Erreur", error?.message || "Une erreur inconnue est survenue.");
       console.error(error);
