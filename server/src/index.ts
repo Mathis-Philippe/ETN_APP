@@ -5,7 +5,6 @@ import cors from 'cors';
 import { sendOrderEmail } from './mail.js';
 import { generateOrderPdf } from './pdf.js';
 import supabase from './supabaseClient.js';
-import { generateDivaltoExcel } from './divaltoExcel.js';
 
 dotenv.config();
 const app = express();
@@ -54,8 +53,6 @@ app.post('/send-order-pdf', async (req, res) => {
     const pdfUint8Array = await generateOrderPdf(pdfData);
     const pdfBuffer = Buffer.from(pdfUint8Array);
 
-    const excelBuffer = generateDivaltoExcel(payload);
-
     await sendOrderEmail({
       to: "mathis.philippe2005@gmail.com",
       subject: `Nouvelle Commande #${payload.orderNumber} - ${clientData.nom}`,
@@ -64,10 +61,6 @@ app.post('/send-order-pdf', async (req, res) => {
         {
           filename: `Commande-${payload.orderNumber}.pdf`,
           content: pdfBuffer,
-        },
-        {
-          filename: `Import-Divalto-${payload.orderNumber}.xlsx`, 
-          content: excelBuffer,
         }
       ],
     });
