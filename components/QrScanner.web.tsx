@@ -21,6 +21,8 @@ export default function QrScannerWeb({ onScan }: { onScan: (data: string) => voi
         const constraints: any = {
           video: { 
             facingMode: 'environment',
+            width: { min: 1280, ideal: 1920, max: 2560 },
+            height: { min: 720, ideal: 1080, max: 1440 },
             focusMode: 'continuous' 
           }
         };
