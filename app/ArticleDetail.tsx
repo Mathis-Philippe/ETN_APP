@@ -108,7 +108,10 @@ export default function ArticleDetail() {
           data = res.data;
 
           if (!data) {
-            const res2 = await supabase.from("articles").select("*").ilike("reference", reference).maybeSingle();
+            const referenceTolerante = reference
+            .replace(/\s+/g, "%") 
+            .replace(/°/g, "%");
+            const res2 = await supabase.from("articles").select("*").ilike("reference", referenceTolerante).maybeSingle();
             data = res2.data;
           }
 
@@ -252,7 +255,7 @@ export default function ArticleDetail() {
                         onChangeText={setLength}
                         autoFocus={true}
                     />
-                    <Text style={styles.unitText}>mètres</Text>
+                    <Text style={styles.unitText}>m</Text>
                 </View>
               </View>
             )}

@@ -4,22 +4,15 @@ export function parseQrData(raw: string) {
     .replace(/\u200B/g, "")
     .replace(/\u00A0/g, " ")
     .replace(/\s+/g, " ")
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
     .trim();
 
-  const lines = data.split("\n").map((l) => l.trim());
+  const codeClientMatch = data.match(/code client\s*:\s*(.*?)(?=(?:référence|désignation|$))/i);
+  const referenceMatch = data.match(/référence\s*:\s*(.*?)(?=(?:code client|désignation|$))/i);
+  const designationMatch = data.match(/désignation\s*:\s*(.*?)(?=(?:code client|référence|$))/i);
 
-  const codeClient =
-    lines.find((l) => l.toLowerCase().startsWith("code client"))?.replace(/code client\s*:/i, "").trim() ?? "";
-
-  let reference =
-    lines.find((l) => l.toLowerCase().startsWith("référence"))?.replace(/référence\s*:/i, "").trim() ?? "";
-
-  reference = reference.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
-
-  const designation =
-    lines.find((l) => l.toLowerCase().startsWith("désignation"))?.replace(/désignation\s*:/i, "").trim() ?? "";
+  const codeClient = codeClientMatch ? codeClientMatch[1].trim() : "";
+  const reference = referenceMatch ? referenceMatch[1].trim() : "";
+  const designation = designationMatch ? designationMatch[1].trim() : "";
 
   return { codeClient, reference, designation };
 }
