@@ -11,7 +11,6 @@ type ClientData = {
   commercial: string;
   role?: "client" | "admin";
   last_login?: string | null;
-  // password n'est pas stocké dans le contexte pour sécurité
 };
 
 type AuthContextType = {
@@ -19,7 +18,7 @@ type AuthContextType = {
   client: ClientData | null;
   error: string | null;
   loginWithQr: (data: string) => Promise<boolean>;
-  loginWithPassword: (code: string, pass: string) => Promise<boolean>; // <--- NOUVEAU
+  loginWithPassword: (code: string, pass: string) => Promise<boolean>;
   logout: () => void;
   setClient: React.Dispatch<React.SetStateAction<ClientData | null>>;
   isAdmin: boolean;
@@ -105,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await AsyncStorage.setItem("etn_user_session", JSON.stringify(newClientData));
   };
 
-  // 1. Connexion via QR Code (Sans mot de passe, basé sur la possession physique du QR)
+  // 1. Connexion via QR Code
   const loginWithQr = async (qrData: string) => {
     if (loadingLogin) return false;
     setLoadingLogin(true);
@@ -147,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // 2. Connexion Manuelle (AVEC Mot de passe)
+  // 2. Connexion Manuelle
   const loginWithPassword = async (code: string, pass: string) => {
     if (loadingLogin) return false;
     setLoadingLogin(true);
@@ -156,7 +155,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const normalizedCode = code.toUpperCase().trim();
       
-      // On récupère le client ET son mot de passe
       const { data: clientData, error: dbError } = await supabase
         .from("clients")
         .select("*")
@@ -164,12 +162,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .single();
 
       if (dbError || !clientData) {
-        setError("Identifiants incorrects"); // On reste vague par sécurité
+        setError("Identifiants incorrects");
         return false;
       }
 
-      // VÉRIFICATION DU MOT DE PASSE
-      // Note: Idéalement, utilisez le hachage, mais ici on compare le texte brut stocké
       if (!clientData.password || clientData.password !== pass) {
         setError("Mot de passe incorrect");
         return false;
